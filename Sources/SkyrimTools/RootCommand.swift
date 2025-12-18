@@ -23,6 +23,7 @@ struct RootCommand: AsyncParsableCommand {
         OverlayCommand.self,
         PullModsCommand.self,
         SleepCommand.self,
+        ExtractCommand.self,
       ]
     )
   }
