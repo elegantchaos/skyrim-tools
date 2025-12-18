@@ -112,11 +112,17 @@ struct ExtractCommand: LoggableCommand {
       for name in names {
         var person = manager.person(
           name, default: { PersonRecord(outfit: outfitKey, outfitSource: source) })
-        if (person.outfit != outfitKey) || (person.outfitSource != source) {
+
+        if let existingOutfit = person.outfit, existingOutfit != outfitKey {
           log(
             "Overwriting existing entry \"\(person.outfit ?? "")\" with \"\(outfitKey)\" for \(name)",
             path: [source]
           )
+          if let existingSource = person.outfitSource {
+            var collisions = person.outfitCollisions.map { Set($0) } ?? []
+            collisions.insert(.init(outfit: existingOutfit, source: existingSource))
+            person.outfitCollisions = Array(collisions)
+          }
           person.outfit = outfitKey
           person.outfitSource = source
           manager.updatePerson(name, person)

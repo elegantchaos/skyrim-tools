@@ -9,7 +9,18 @@ import Foundation
 struct PersonRecord: Codable, Equatable {
   /// Outfit filename (without extension) that this NPC uses.
   var outfit: String?
-  /// Optional source identifier for where the outfit came from.
+
+  /// Where the outfit came from.
   /// For example, the INI filename or mod name.
   var outfitSource: String? = nil
+
+  /// Any outfit collisions for this NPC.
+  /// Each tuple contains (outfit name, outfit source)
+  /// for an outfit that conflicts with the assigned one.
+  var outfitCollisions: [OutfitCollision]? = nil
+}
+
+struct OutfitCollision: Codable, Equatable, Hashable {
+  let outfit: String
+  let source: String
 }

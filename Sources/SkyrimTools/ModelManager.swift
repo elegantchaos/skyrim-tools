@@ -181,7 +181,6 @@ class ModelManager {
     let record = factory()
     people[key] = record
     modifiedPeople.insert(key)
-    print("inserted person \(key)")
     return record
   }
 
