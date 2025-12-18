@@ -44,8 +44,11 @@ struct PullModsCommand: LoggableCommand, GameCommand {
     let modConfigURL = modsURL.appending(path: modName + ".json")
     if !FileManager.default.fileExists(atPath: modConfigURL.path) {
       log("Creating mod config for \(modName)")
-      let blankConfig = "{\n}"
-      try blankConfig.write(to: modConfigURL)
+      let blankConfig = ModRecord()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      let data = try encoder.encode(blankConfig)
+      try data.write(to: modConfigURL)
     }
   }
 }

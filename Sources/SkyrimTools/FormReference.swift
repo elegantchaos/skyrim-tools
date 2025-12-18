@@ -78,10 +78,13 @@ struct FormReference: Codable {
     guard let line = lines.first else { return nil }
 
     let regex = #/^(?<name>.+?)\s+outfit\s+to\s+\w+/#
-    guard let match = line.wholeMatch(of: regex) else { return nil }
+    if let name = line.wholeMatch(of: regex)?.name.trimmingCharacters(in: .whitespaces),
+      !name.isEmpty
+    {
+      return name
+    }
 
-    let name = String(match.name).trimmingCharacters(in: .whitespaces)
-    return name.isEmpty ? line : name
+    return line
   }
 
   /// Derived plugin type from the filename extension.

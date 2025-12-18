@@ -5,8 +5,9 @@
 
 import Foundation
 
-/// A record representing an NPC person with their outfit assignment.
-struct PersonRecord: Codable {
-  /// Outfit filename (without extension) that this NPC uses.
-  let outfit: String?
+/// A record for an armour item used in sleep configurations.
+struct SleepArmourRecord: Codable {
+  let formID: String?
+  let editorID: String?
+  let name: String?
 }

@@ -8,21 +8,13 @@ import DictionaryMerger
 import Foundation
 
 struct SleepCommand: ModProcessingCommand {
+  typealias ModRecord = SkyrimTools.ModRecord
+
   static var configuration: CommandConfiguration {
     CommandConfiguration(
       commandName: "sleep",
       abstract: "Export sleep information for the armour we know about."
     )
-  }
-
-  struct ModRecord: Codable {
-    let armours: [SleepArmourRecord]?
-  }
-
-  struct SleepArmourRecord: Codable {
-    let formID: String?
-    let editorID: String?
-    let name: String?
   }
 
   @Flag() var verbose: Bool = false

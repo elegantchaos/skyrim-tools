@@ -14,20 +14,6 @@ struct ModsCommand: ModProcessingCommand {
     )
   }
 
-  struct ModRecord: Codable {
-    /// Should we add the mod to the blacklist for OBody?
-    let skipOBody: Bool?
-
-    /// Should we add the mod to the blacklist for OBody female?
-    let skipOBodyFemale: Bool?
-
-    /// Should we add the mod to the blacklist for OBody male?
-    let skipOBodyMale: Bool?
-
-    /// Should we add the mod to the blacklist for RSV?
-    let skipRSV: Bool?
-  }
-
   @Flag() var verbose: Bool = false
   @Option(help: "Path to a folder containing mod data files.") var modsPath: String?
   @Option(help: "Path to the output .json file for RSV data.") var rsvOutputPath: String?

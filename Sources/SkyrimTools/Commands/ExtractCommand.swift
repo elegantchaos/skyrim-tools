@@ -21,6 +21,7 @@ struct ExtractCommand: LoggableCommand {
 
   @Flag() var verbose: Bool = false
   @Option(help: "Path to a folder containing *_DISTR.ini files.") var inputPath: String?
+  @Option(help: "Path to a folder containing mod config .json files.") var modsPath: String?
   @Option(help: "Path to a folder where individual NPC JSON files will be written.")
   var npcsPath: String?
   @Option(help: "Path to a folder where individual outfit JSON files will be written.")
@@ -33,12 +34,36 @@ struct ExtractCommand: LoggableCommand {
       return
     }
 
+    guard let modsPath else {
+      print("No mods path specified.")
+      return
+    }
+
     let inputURL = URL(fileURLWithPath: inputPath, relativeTo: cwd)
+    let modsURL = URL(fileURLWithPath: modsPath, relativeTo: cwd)
     let fm = FileManager.default
+
+    try fm.createDirectory(at: modsURL, withIntermediateDirectories: true)
+    var mods: [String: ModRecord] = [:]
+    let decoder = JSONDecoder()
+    for modURL in try fm.contentsOfDirectory(at: modsURL, includingPropertiesForKeys: nil) {
+      guard modURL.pathExtension.lowercased() == "json" else { continue }
+      do {
+        let data = try Data(contentsOf: modURL)
+        let mod = try decoder.decode(ModRecord.self, from: data)
+        mods[modURL.deletingPathExtension().lastPathComponent] = mod
+      } catch {
+        log("Skipping mod file \(modURL.lastPathComponent): \(error)")
+      }
+    }
+
     guard let enumerator = fm.enumerator(at: inputURL, includingPropertiesForKeys: nil) else {
       print("Couldn't enumerate files at \(inputURL.path)")
       return
     }
+
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
     let parser = IniParser()
     var people: [String: PersonRecord] = [:]
@@ -49,11 +74,9 @@ struct ExtractCommand: LoggableCommand {
       log("Parsing \(fileURL.lastPathComponent)")
       let entries = try parser.parse(url: fileURL)
       process(
-        entries: entries, people: &people, outfits: &outfits, source: fileURL.lastPathComponent)
+        entries: entries, people: &people, outfits: &outfits, mods: &mods, modsURL: modsURL,
+        encoder: encoder, source: fileURL.lastPathComponent)
     }
-
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
     if let npcsPath {
       let npcsURL = URL(fileURLWithPath: npcsPath, relativeTo: cwd)
@@ -96,9 +119,10 @@ struct ExtractCommand: LoggableCommand {
   ///   - source: The name of the source file for logging purposes.
   private func process(
     entries: [IniEntry], people: inout [String: PersonRecord],
-    outfits: inout [String: FormReference], source: String
+    outfits: inout [String: FormReference], mods: inout [String: ModRecord], modsURL: URL,
+    encoder: JSONEncoder, source: String
   ) {
-    for entry in entries.filter { $0.matchesKey("Outfit") } {
+    for entry in entries.filter({ $0.matchesKey("Outfit") }) {
       let payload = entry.value
       let assignment = payload.split(separator: "|", maxSplits: 1).map {
         $0.trimmingCharacters(in: .whitespaces)
@@ -125,13 +149,30 @@ struct ExtractCommand: LoggableCommand {
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
 
-      outfits[form.spidName] = form
+      let outfitKey = form.spidName
+      outfits[outfitKey] = form
+
+      let modName = URL(fileURLWithPath: form.file).deletingPathExtension().lastPathComponent
+      if mods[modName] == nil {
+        let record = ModRecord(skipOBody: true)
+        mods[modName] = record
+        let modFileURL = modsURL.appending(path: "\(modName).json")
+        do {
+          let data = try encoder.encode(record)
+          try data.write(to: modFileURL)
+          log("Created mod config for \(modName)", path: [source])
+        } catch {
+          log("Failed to write mod config for \(modName): \(error)", path: [source])
+        }
+      }
 
       for name in names {
-        if let existing = people[name], existing.outfit.formID != form.formID {
-          log("Overwriting existing entry for \(name)", path: [source])
+        if let existing = people[name]?.outfit, existing != outfitKey {
+          log(
+            "Overwriting existing entry \"\(existing)\" with \"\(outfitKey)\" for \(name)",
+            path: [source])
         }
-        people[name] = PersonRecord(outfit: form)
+        people[name] = PersonRecord(outfit: outfitKey)
       }
     }
   }
