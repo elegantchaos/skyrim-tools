@@ -84,15 +84,18 @@ struct ExtractCommand: LoggableCommand {
       let formPart = assignment[0]
       let namesPart = assignment[1]
 
-      var outfit: FormReference
+      var outfit: FormReference?
       do {
         let defaultOutfit = try FormReference(parse: String(formPart), comment: entry.comment)
-        let outfitKey = defaultOutfit.spidName
-        outfit = manager.outfit(outfitKey, default: { defaultOutfit })
-        if outfit != defaultOutfit {
-          log("Overwriting existing outfit \(outfit) with \(defaultOutfit)", path: [source])
-          manager.updateOutfit(outfitKey, defaultOutfit)
-          outfit = defaultOutfit
+        if let outfitKey = defaultOutfit.spidName {
+          let found = manager.outfit(outfitKey, default: { defaultOutfit })
+          if found != defaultOutfit {
+            log("Overwriting existing outfit \(found) with \(defaultOutfit)", path: [source])
+            manager.updateOutfit(outfitKey, defaultOutfit)
+            outfit = defaultOutfit
+          } else {
+            outfit = found
+          }
         }
       } catch {
         log("Skipping malformed form \(formPart): \(error)", path: [source])
@@ -105,27 +108,28 @@ struct ExtractCommand: LoggableCommand {
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
 
-      let modName = URL(fileURLWithPath: outfit.file).deletingPathExtension().lastPathComponent
-      _ = manager.mod(modName, default: { ModRecord(skipOBody: true) })
+      if let outfit, let outfitKey = outfit.spidName {
+        let modName = URL(fileURLWithPath: outfit.mod).deletingPathExtension().lastPathComponent
+        _ = manager.mod(modName, default: { ModRecord() })
 
-      let outfitKey = outfit.spidName
-      for name in names {
-        var person = manager.person(
-          name, default: { PersonRecord(outfit: outfitKey, outfitSource: source) })
+        for name in names {
+          var person = manager.person(
+            name, default: { PersonRecord(outfit: outfitKey, outfitSource: source) })
 
-        if let existingOutfit = person.outfit, existingOutfit != outfitKey {
-          log(
-            "Overwriting existing entry \"\(person.outfit ?? "")\" with \"\(outfitKey)\" for \(name)",
-            path: [source]
-          )
-          if let existingSource = person.outfitSource {
-            var collisions = person.outfitCollisions.map { Set($0) } ?? []
-            collisions.insert(.init(outfit: existingOutfit, source: existingSource))
-            person.outfitCollisions = Array(collisions)
+          if let existingOutfit = person.outfit, existingOutfit != outfitKey {
+            log(
+              "Overwriting existing entry \"\(person.outfit ?? "")\" with \"\(outfitKey)\" for \(name)",
+              path: [source]
+            )
+            if let existingSource = person.outfitSource {
+              var collisions = person.outfitCollisions.map { Set($0) } ?? []
+              collisions.insert(.init(outfit: existingOutfit, source: existingSource))
+              person.outfitCollisions = Array(collisions)
+            }
+            person.outfit = outfitKey
+            person.outfitSource = source
+            manager.updatePerson(name, person)
           }
-          person.outfit = outfitKey
-          person.outfitSource = source
-          manager.updatePerson(name, person)
         }
       }
     }

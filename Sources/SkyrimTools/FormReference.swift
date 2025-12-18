@@ -11,10 +11,13 @@ import Foundation
 /// an outfit from a specific mod file.
 struct FormReference: Codable, Equatable {
   /// The formID of the outfit as an uppercase hex string with a `0x` prefix.
-  let formID: String
+  let formID: String?
 
-  /// The plugin filename including extension, eg `FlowerGirlsDESPID.esp`.
-  let file: String
+  /// Optional editor ID of the outfit.
+  let editorID: String?
+
+  /// The mod filename including extension, eg `FlowerGirlsDESPID.esp`.
+  let mod: String
 
   /// Optional human-readable name from a preceding comment, if present.
   let name: String?
@@ -29,9 +32,13 @@ struct FormReference: Codable, Equatable {
   }
 
   /// Initialize a reference with explicit values.
-  init(formID: String, file: String, name: String?, description: String?) {
+  init(
+    formID: String? = nil, editorID: String? = nil, mod: String, name: String? = nil,
+    description: String? = nil
+  ) {
     self.formID = formID
-    self.file = file
+    self.editorID = editorID
+    self.mod = mod
     self.name = name
     self.description = description
   }
@@ -63,7 +70,8 @@ struct FormReference: Codable, Equatable {
 
     let normalizedFormID = "0x" + hexBody.uppercased()
     self.formID = normalizedFormID
-    self.file = modURL.lastPathComponent
+    self.editorID = nil
+    self.mod = modURL.lastPathComponent
     self.description = comment?.isEmpty == false ? comment : nil
     self.name = FormReference.parseName(from: comment)
   }
@@ -97,15 +105,17 @@ struct FormReference: Codable, Equatable {
 
   /// Derived plugin type from the filename extension.
   var modType: ModType {
-    let ext = URL(fileURLWithPath: file).pathExtension.lowercased()
+    let ext = URL(fileURLWithPath: mod).pathExtension.lowercased()
     return ModType(rawValue: ext) ?? .esp
   }
 
-  var spidName: String {
+  var spidName: String? {
     if let name {
       return name
+    } else if let formID {
+      return "\(formID)~\(mod)"
     } else {
-      return "\(formID)~\(file)"
+      return nil
     }
   }
 }

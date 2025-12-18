@@ -33,6 +33,7 @@ class ModelManager {
   /// Escape a record key into a safe filename component (without extension).
   private func escapedFileBase(for key: String) -> String {
     var allowed = CharacterSet.urlPathAllowed
+    allowed.formUnion(CharacterSet.punctuationCharacters)
     allowed.remove(charactersIn: "/")
     allowed.insert(" ")
     return key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
@@ -66,6 +67,7 @@ class ModelManager {
     try fm.createDirectory(at: armorsURL, withIntermediateDirectories: true)
 
     try loadIndexes()
+    try migrateModArmor()
   }
 
   /// Load indexes from disk.
@@ -268,5 +270,52 @@ class ModelManager {
         print("Warning: Failed to save \(fileURL.lastPathComponent): \(error)")
       }
     }
+  }
+}
+
+extension ModelManager {
+  struct SleepArmourRecord: Codable, Equatable {
+    let formID: String?
+    let editorID: String?
+    let name: String?
+  }
+
+  struct ModArmoursRecord: Decodable {
+    let armours: [SleepArmourRecord]
+  }
+
+  private func migrateModArmor() throws {
+    let fm = FileManager.default
+    let files = try fm.contentsOfDirectory(at: modsURL, includingPropertiesForKeys: nil)
+    for fileURL in files {
+      guard fileURL.pathExtension.lowercased() == "json" else { continue }
+      let modFileName = fileURL.deletingPathExtension().lastPathComponent
+      let modKey = unescapedKey(from: modFileName)
+      do {
+        let data = try Data(contentsOf: fileURL)
+        let mod = try decoder.decode(ModArmoursRecord.self, from: data)
+        print("Migrating armors for mod \(modKey)")
+        for armour in mod.armours {
+          if let armorKey = armour.name {
+            _ = armor(
+              armorKey, default: { ArmorRecord(from: armour, mod: modKey) })
+          }
+        }
+      } catch {
+
+      }
+    }
+  }
+}
+
+extension ArmorRecord {
+  init(from: ModelManager.SleepArmourRecord, mod: String) {
+    self.id = FormReference(
+      formID: from.formID,
+      editorID: from.editorID,
+      mod: mod,
+      name: from.name
+    )
+    self.sleepSets = [URL(fileURLWithPath: mod).deletingPathExtension().lastPathComponent]
   }
 }

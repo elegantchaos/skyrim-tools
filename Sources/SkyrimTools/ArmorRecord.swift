@@ -7,7 +7,11 @@ import Foundation
 
 /// A record for an armor item.
 struct ArmorRecord: Codable, Equatable {
-  let formID: String?
-  let editorID: String?
-  let name: String?
+  let id: FormReference
+  var sleepSets: [String]?
+
+  init(id: FormReference, sleepSets: [String]? = nil) {
+    self.id = id
+    self.sleepSets = sleepSets
+  }
 }
