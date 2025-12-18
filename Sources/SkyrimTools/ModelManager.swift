@@ -30,6 +30,19 @@ class ModelManager {
   private let decoder = JSONDecoder()
   private let encoder: JSONEncoder
 
+  /// Escape a record key into a safe filename component (without extension).
+  private func escapedFileBase(for key: String) -> String {
+    var allowed = CharacterSet.urlPathAllowed
+    allowed.remove(charactersIn: "/")
+    allowed.insert(" ")
+    return key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
+  }
+
+  /// Unescape a filename component (without extension) back into the original key.
+  private func unescapedKey(from base: String) -> String {
+    base.removingPercentEncoding ?? base
+  }
+
   /// Initialize the manager with a data folder URL.
   ///
   /// - Parameter dataURL: The URL to the root data folder containing subdirectories:
@@ -71,7 +84,8 @@ class ModelManager {
 
     for fileURL in files {
       guard fileURL.pathExtension.lowercased() == "json" else { continue }
-      let key = fileURL.deletingPathExtension().lastPathComponent
+      let rawBase = fileURL.deletingPathExtension().lastPathComponent
+      let key = unescapedKey(from: rawBase)
       do {
         let data = try Data(contentsOf: fileURL)
         let record = try decoder.decode(T.self, from: data)
@@ -84,23 +98,24 @@ class ModelManager {
     return index
   }
 
-  /// Retrieve a mod record, optionally creating one if it doesn't exist.
-  ///
+  /// Retrieve a mod record if it exists.
+  /// - Parameter key: The mod name (filename without extension).
+  /// - Returns: The existing mod record or `nil` if not present.
+  func mod(_ key: String) -> ModRecord? {
+    mods[key]
+  }
+
+  /// Retrieve a mod record, creating one with the supplied factory if missing.
   /// - Parameters:
   ///   - key: The mod name (filename without extension).
-  ///   - create: If `true`, creates a new default record if one doesn't exist.
-  /// - Returns: The mod record, or `nil` if not found and `create` is `false`.
-  func mod(_ key: String, _ create: Bool = true) -> ModRecord? {
-    if let record = mods[key] {
-      return record
-    }
-    if create {
-      let record = ModRecord()
-      mods[key] = record
-      modifiedMods.insert(key)
-      return record
-    }
-    return nil
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created mod record.
+  func mod(_ key: String, default factory: () -> ModRecord) -> ModRecord {
+    if let record = mods[key] { return record }
+    let record = factory()
+    mods[key] = record
+    modifiedMods.insert(key)
+    return record
   }
 
   /// Update a mod record with a new value.
@@ -116,25 +131,24 @@ class ModelManager {
     }
   }
 
-  /// Retrieve an outfit record, optionally creating one if it doesn't exist.
-  ///
+  /// Retrieve an outfit record if it exists.
+  /// - Parameter key: The outfit name (filename without extension).
+  /// - Returns: The existing outfit record or `nil` if not present.
+  func outfit(_ key: String) -> FormReference? {
+    outfits[key]
+  }
+
+  /// Retrieve an outfit record, creating one with the supplied factory if missing.
   /// - Parameters:
   ///   - key: The outfit name (filename without extension).
-  ///   - create: If `true`, creates a new default record if one doesn't exist.
-  /// - Returns: The outfit record, or `nil` if not found and `create` is `false`.
-  func outfit(_ key: String, _ create: Bool = true) -> FormReference? {
-    if let record = outfits[key] {
-      return record
-    }
-    if create {
-      // Create a minimal default outfit record
-      let record = FormReference(
-        formID: "0x0", file: key + ".esp", name: nil, description: nil)
-      outfits[key] = record
-      modifiedOutfits.insert(key)
-      return record
-    }
-    return nil
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created outfit record.
+  func outfit(_ key: String, default factory: () -> FormReference) -> FormReference {
+    if let record = outfits[key] { return record }
+    let record = factory()
+    outfits[key] = record
+    modifiedOutfits.insert(key)
+    return record
   }
 
   /// Update an outfit record with a new value.
@@ -150,23 +164,25 @@ class ModelManager {
     }
   }
 
-  /// Retrieve a person record, optionally creating one if it doesn't exist.
-  ///
+  /// Retrieve a person record if it exists.
+  /// - Parameter key: The NPC name (filename without extension).
+  /// - Returns: The existing person record or `nil` if not present.
+  func person(_ key: String) -> PersonRecord? {
+    people[key]
+  }
+
+  /// Retrieve a person record, creating one with the supplied factory if missing.
   /// - Parameters:
   ///   - key: The NPC name (filename without extension).
-  ///   - create: If `true`, creates a new default record if one doesn't exist.
-  /// - Returns: The person record, or `nil` if not found and `create` is `false`.
-  func person(_ key: String, _ create: Bool = true) -> PersonRecord? {
-    if let record = people[key] {
-      return record
-    }
-    if create {
-      let record = PersonRecord(outfit: nil)
-      people[key] = record
-      modifiedPeople.insert(key)
-      return record
-    }
-    return nil
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created person record.
+  func person(_ key: String, default factory: () -> PersonRecord) -> PersonRecord {
+    if let record = people[key] { return record }
+    let record = factory()
+    people[key] = record
+    modifiedPeople.insert(key)
+    print("inserted person \(key)")
+    return record
   }
 
   /// Update a person record with a new value.
@@ -182,23 +198,24 @@ class ModelManager {
     }
   }
 
-  /// Retrieve an armor record, optionally creating one if it doesn't exist.
-  ///
+  /// Retrieve an armor record if it exists.
+  /// - Parameter key: The armor name (filename without extension).
+  /// - Returns: The existing armor record or `nil` if not present.
+  func armor(_ key: String) -> ArmorRecord? {
+    armors[key]
+  }
+
+  /// Retrieve an armor record, creating one with the supplied factory if missing.
   /// - Parameters:
   ///   - key: The armor name (filename without extension).
-  ///   - create: If `true`, creates a new default record if one doesn't exist.
-  /// - Returns: The armor record, or `nil` if not found and `create` is `false`.
-  func armor(_ key: String, _ create: Bool = true) -> ArmorRecord? {
-    if let record = armors[key] {
-      return record
-    }
-    if create {
-      let record = ArmorRecord(formID: nil, editorID: nil, name: nil)
-      armors[key] = record
-      modifiedArmors.insert(key)
-      return record
-    }
-    return nil
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created armor record.
+  func armor(_ key: String, default factory: () -> ArmorRecord) -> ArmorRecord {
+    if let record = armors[key] { return record }
+    let record = factory()
+    armors[key] = record
+    modifiedArmors.insert(key)
+    return record
   }
 
   /// Update an armor record with a new value.
@@ -235,7 +252,8 @@ class ModelManager {
   ) throws {
     for key in modified {
       guard let record = index[key] else { continue }
-      let fileURL = url.appending(path: "\(key).json")
+      let base = escapedFileBase(for: key)
+      let fileURL = url.appending(path: "\(base).json")
       let newData = try encoder.encode(record)
 
       // Check if file exists and has identical content
@@ -245,7 +263,11 @@ class ModelManager {
         }
       }
 
-      try newData.write(to: fileURL)
+      do {
+        try newData.write(to: fileURL)
+      } catch {
+        print("Warning: Failed to save \(fileURL.lastPathComponent): \(error)")
+      }
     }
   }
 }

@@ -8,5 +8,8 @@ import Foundation
 /// A record representing an NPC person with their outfit assignment.
 struct PersonRecord: Codable, Equatable {
   /// Outfit filename (without extension) that this NPC uses.
-  let outfit: String?
+  var outfit: String?
+  /// Optional source identifier for where the outfit came from.
+  /// For example, the INI filename or mod name.
+  var outfitSource: String? = nil
 }

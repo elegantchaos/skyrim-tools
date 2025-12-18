@@ -111,12 +111,8 @@
         "--verbose",
         "--input-path",
         "${workspaceFolder}/../skyrim-config/Extras/Dummy Game Folder/Data",
-        "--mods-path",
-        "${workspaceFolder}/../skyrim-config/Data/Mods",
-        "--npcs-path",
-        "${workspaceFolder}/../skyrim-config/Data/People",
-        "--outfits-path",
-        "${workspaceFolder}/../skyrim-config/Data/Outfits"
+        "--model-path",
+        "${workspaceFolder}/../skyrim-config/Data"
       ],
       "configuration": "debug",
       "preLaunchTask": "swift: Build All"
