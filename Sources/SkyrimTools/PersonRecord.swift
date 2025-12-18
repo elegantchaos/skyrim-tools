@@ -6,7 +6,7 @@
 import Foundation
 
 /// A record representing an NPC person with their outfit assignment.
-struct PersonRecord: Codable {
+struct PersonRecord: Codable, Equatable {
   /// Outfit filename (without extension) that this NPC uses.
   let outfit: String?
 }

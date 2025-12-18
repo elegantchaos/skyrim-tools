@@ -6,7 +6,7 @@
 import Foundation
 
 /// A mod configuration record capturing OBody/RSV blacklist flags.
-struct ModRecord: Codable {
+struct ModRecord: Codable, Equatable {
   /// Should we add the mod to the blacklist for OBody?
   let skipOBody: Bool?
 

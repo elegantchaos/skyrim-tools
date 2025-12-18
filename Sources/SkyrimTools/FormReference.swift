@@ -9,7 +9,7 @@ import Foundation
 ///
 /// This struct contains all the information needed to identify and reference
 /// an outfit from a specific mod file.
-struct FormReference: Codable {
+struct FormReference: Codable, Equatable {
   /// The formID of the outfit as an uppercase hex string with a `0x` prefix.
   let formID: String
 
@@ -26,6 +26,14 @@ struct FormReference: Codable {
     case malformedForm(String)
     case invalidFormID(String)
     case unknownModType(String)
+  }
+
+  /// Initialize a reference with explicit values.
+  init(formID: String, file: String, name: String?, description: String?) {
+    self.formID = formID
+    self.file = file
+    self.name = name
+    self.description = description
   }
 
   /// Initialize a reference by parsing a `formID~mod` string.
