@@ -73,11 +73,20 @@ struct ExtractCommand: LoggableCommand {
   ) {
     for entry in entries.filter({ $0.matchesKey("Outfit") }) {
       let payload = entry.value
-      let assignment = payload.split(separator: "|", maxSplits: 1).map {
+      let assignment = payload.split(separator: "|").map {
         $0.trimmingCharacters(in: .whitespaces)
       }
-      guard assignment.count == 2 else {
-        log("Skipping malformed line (expected form|names)", path: [source])
+      switch assignment.count {
+      case 2:
+        break
+
+      case 7:
+        let keywordsPart = assignment[1] == "NONE" ? assignment[2] : assignment[1]
+        log("Ignoring extended outfit assignment for \(keywordsPart)", path: [source])
+        continue
+
+      default:
+        log("Skipping malformed outfit assignment \(payload)", path: [source])
         continue
       }
 

@@ -36,7 +36,7 @@ struct FormReference: Codable, Equatable {
     formID: String? = nil, editorID: String? = nil, mod: String, name: String? = nil,
     description: String? = nil
   ) {
-    self.formID = formID
+    self.formID = formID?.cleanHex
     self.editorID = editorID
     self.mod = mod
     self.name = name
@@ -109,6 +109,9 @@ struct FormReference: Codable, Equatable {
     return ModType(rawValue: ext) ?? .esp
   }
 
+  /// Name for use in a SPID or KID file.
+  /// Uses the human-readable name if present,
+  /// otherwise combines formID and mod.
   var spidName: String? {
     if let name {
       return name
@@ -117,5 +120,10 @@ struct FormReference: Codable, Equatable {
     } else {
       return nil
     }
+  }
+
+  /// Name for use in a sleep set file.
+  var sleepName: String? {
+    formID.map { "\($0)|\(mod)" }
   }
 }

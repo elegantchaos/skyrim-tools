@@ -20,7 +20,7 @@ struct ModRecord: Codable, Equatable {
   let skipRSV: Bool?
 
   /// Sleep armour records for this mod.
-  let armours: [SleepArmourRecord]?
+  let armours: [String]?
 
   /// Outfit names for this mod.
   let outfits: [String]?
@@ -33,7 +33,7 @@ struct ModRecord: Codable, Equatable {
     skipOBodyFemale: Bool? = nil,
     skipOBodyMale: Bool? = nil,
     skipRSV: Bool? = nil,
-    armours: [SleepArmourRecord]? = nil,
+    armours: [String]? = nil,
     outfits: [String]? = nil,
     npcs: [String]? = nil
   ) {

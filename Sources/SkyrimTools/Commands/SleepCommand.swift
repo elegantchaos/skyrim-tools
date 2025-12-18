@@ -4,12 +4,9 @@
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 import ArgumentParser
-import DictionaryMerger
 import Foundation
 
-struct SleepCommand: ModProcessingCommand {
-  typealias ModRecord = SkyrimTools.ModRecord
-
+struct SleepCommand: LoggableCommand {
   static var configuration: CommandConfiguration {
     CommandConfiguration(
       commandName: "sleep",
@@ -18,28 +15,56 @@ struct SleepCommand: ModProcessingCommand {
   }
 
   @Flag() var verbose: Bool = false
-  @Option(help: "Path to a folder containing mod data files.") var modsPath: String?
+  @Option(
+    help:
+      "Path to the model data folder containing Mods, Outfits, People, and Armors subdirectories.")
+  var modelPath: String?
   @Option(help: "Path to write the output files to.") var outputPath: String?
 
   mutating func run() throws {
-    try loadAndProcessMods()
-  }
+    let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    guard let modelPath else {
+      print("No model path specified.")
+      return
+    }
 
-  func process(mods: [String: ModRecord], cwd: URL) {
-    if let outputURL = outputPath.map({ URL(fileURLWithPath: $0, relativeTo: cwd) }) {
-      for (mod, info) in mods {
-        if let armours = info.armours {
-          log("Processing \(mod) with \(armours.count) armours")
-          let ids = armours.compactMap { $0.formID }
-          let json = json(forIDs: ids, mod: mod)
-          try? json.write(to: outputURL.appending(path: "\(mod).json"))
+    guard let outputPath else {
+      print("No output path specified.")
+      return
+    }
+
+    let modelURL = URL(fileURLWithPath: modelPath, relativeTo: cwd)
+    let outputURL = URL(fileURLWithPath: outputPath, relativeTo: cwd)
+    let manager = try ModelManager(dataURL: modelURL)
+
+    try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+    // Group armor records by their sleep sets
+    var setToArmors: [String: [(id: FormReference, set: String)]] = [:]
+    for (_, armor) in manager.armors {
+      if let sets = armor.sleepSets {
+        for set in sets {
+          if setToArmors[set] == nil {
+            setToArmors[set] = []
+          }
+          setToArmors[set]?.append((id: armor.id, set: set))
         }
       }
     }
+
+    // Write JSON for each sleep set
+    for (setName, armors) in setToArmors {
+      let ids = armors.compactMap { $0.id.sleepName }
+      let json = json(forIDs: ids)
+      let fileName = setName.keyEscapingSlashes + ".json"
+      let fileURL = outputURL.appending(path: fileName)
+      try json.write(to: fileURL, atomically: true, encoding: .utf8)
+      log("Wrote \(setName) with \(ids.count) armours to \(fileName)")
+    }
   }
 
-  func json(forIDs ids: [String], mod: String) -> String {
-    let items = ids.map { id in "          \"\(id.cleanHex)|\(mod)\"" }
+  func json(forIDs ids: [String]) -> String {
+    let items = ids.map { id in "          \"\(id)\"" }
     let expanded = items.joined(separator: ",\n")
     return """
         {

@@ -57,8 +57,8 @@
       "args": [
         "sleep",
         "--verbose",
-        "--mods-path",
-        "${workspaceFolder}/../skyrim-config/Data/Mods",
+        "--model-path",
+        "${workspaceFolder}/../skyrim-config/Data",
         "--output-path",
         "${workspaceFolder}/../skyrim-config/Overlays/Sleep/",
       ],

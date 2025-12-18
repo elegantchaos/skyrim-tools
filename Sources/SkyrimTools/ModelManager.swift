@@ -30,20 +30,6 @@ class ModelManager {
   private let decoder = JSONDecoder()
   private let encoder: JSONEncoder
 
-  /// Escape a record key into a safe filename component (without extension).
-  private func escapedFileBase(for key: String) -> String {
-    var allowed = CharacterSet.urlPathAllowed
-    allowed.formUnion(CharacterSet.punctuationCharacters)
-    allowed.remove(charactersIn: "/")
-    allowed.insert(" ")
-    return key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
-  }
-
-  /// Unescape a filename component (without extension) back into the original key.
-  private func unescapedKey(from base: String) -> String {
-    base.removingPercentEncoding ?? base
-  }
-
   /// Initialize the manager with a data folder URL.
   ///
   /// - Parameter dataURL: The URL to the root data folder containing subdirectories:
@@ -87,7 +73,7 @@ class ModelManager {
     for fileURL in files {
       guard fileURL.pathExtension.lowercased() == "json" else { continue }
       let rawBase = fileURL.deletingPathExtension().lastPathComponent
-      let key = unescapedKey(from: rawBase)
+      let key = rawBase.unescapedKey
       do {
         let data = try Data(contentsOf: fileURL)
         let record = try decoder.decode(T.self, from: data)
@@ -253,7 +239,7 @@ class ModelManager {
   ) throws {
     for key in modified {
       guard let record = index[key] else { continue }
-      let base = escapedFileBase(for: key)
+      let base = key.keyEscapingSlashes
       let fileURL = url.appending(path: "\(base).json")
       let newData = try encoder.encode(record)
 
@@ -290,7 +276,7 @@ extension ModelManager {
     for fileURL in files {
       guard fileURL.pathExtension.lowercased() == "json" else { continue }
       let modFileName = fileURL.deletingPathExtension().lastPathComponent
-      let modKey = unescapedKey(from: modFileName)
+      let modKey = modFileName.unescapedKey
       do {
         let data = try Data(contentsOf: fileURL)
         let mod = try decoder.decode(ModArmoursRecord.self, from: data)
@@ -301,6 +287,10 @@ extension ModelManager {
               armorKey, default: { ArmorRecord(from: armour, mod: modKey) })
           }
         }
+
+        let sortedArmors = mod.armours.map { $0.name }.compactMap { $0 }.sorted()
+        let updatedMod = ModRecord(armours: sortedArmors)
+        updateMod(modKey, updatedMod)
       } catch {
 
       }
@@ -318,4 +308,21 @@ extension ArmorRecord {
     )
     self.sleepSets = [URL(fileURLWithPath: mod).deletingPathExtension().lastPathComponent]
   }
+}
+
+extension String {
+  /// Escape a record key to remove slashes for use as a filename component.
+  var keyEscapingSlashes: String {
+    var allowed = CharacterSet.urlPathAllowed
+    allowed.formUnion(CharacterSet.punctuationCharacters)
+    allowed.remove(charactersIn: "/")
+    allowed.insert(" ")
+    return self.addingPercentEncoding(withAllowedCharacters: allowed) ?? self
+  }
+
+  /// Unescape a filename component (which might contain escaped slashes) back into the original key.
+  var unescapedKey: String {
+    self.removingPercentEncoding ?? self
+  }
+
 }
