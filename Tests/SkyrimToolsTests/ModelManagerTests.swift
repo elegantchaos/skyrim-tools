@@ -25,13 +25,13 @@ import Testing
       at: dataTempURL.appending(path: "People"), withIntermediateDirectories: true)
 
     try fm.copyItem(
-      at: TestData.testData("SampleMod.json"),
+      at: testData("SampleMod.json"),
       to: dataTempURL.appending(path: "Mods/SampleMod.json"))
     try fm.copyItem(
-      at: TestData.testData("FlowerGirls Outfit.json"),
+      at: testData("FlowerGirls Outfit.json"),
       to: dataTempURL.appending(path: "Outfits/FlowerGirls Outfit.json"))
     try fm.copyItem(
-      at: TestData.testData("Ysolda.json"),
+      at: testData("Ysolda.json"),
       to: dataTempURL.appending(path: "People/Ysolda.json"))
 
     let manager = try ModelManager(dataURL: dataTempURL)
