@@ -39,67 +39,30 @@ struct SleepCommand: LoggableCommand {
 
     try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
 
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
     // Group armor records by their sleep sets
-    var setToArmors: [String: [(id: FormReference, set: String)]] = [:]
+    var setToArmors: [String: [FormReference]] = [:]
     for (_, armor) in manager.armors {
-      if let sets = armor.sleepSets {
-        for set in sets {
-          if setToArmors[set] == nil {
-            setToArmors[set] = []
-          }
-          setToArmors[set]?.append((id: armor.id, set: set))
-        }
+      guard let sets = armor.sleepSets else { continue }
+      for set in sets {
+        setToArmors[set, default: []].append(armor.id)
       }
     }
 
     // Write JSON for each sleep set
     for (setName, armors) in setToArmors {
-      let ids = armors.compactMap { $0.id.sleepName }
-      let json = json(forIDs: ids)
+      let ids = armors.compactMap { $0.sleepName }
+      var sleepSet = manager.sleepSet(
+        setName, default: { manager.sleepSet("default") ?? SleepSet.empty })
+      sleepSet.formList.items = ids
+
+      let data = try encoder.encode(sleepSet)
       let fileName = setName.keyEscapingSlashes + ".json"
       let fileURL = outputURL.appending(path: fileName)
-      try json.write(to: fileURL, atomically: true, encoding: .utf8)
+      try data.write(to: fileURL)
       log("Wrote \(setName) with \(ids.count) armours to \(fileName)")
     }
-  }
-
-  func json(forIDs ids: [String]) -> String {
-    let items = ids.map { id in "          \"\(id)\"" }
-    let expanded = items.joined(separator: ",\n")
-    return """
-        {
-          "formList": {
-              "items": [
-      \(expanded)
-              ]
-          },
-          "int": {
-              "itemmode": 0,
-              "version": 110
-          }
-      }
-      """
-  }
-}
-
-extension String {
-  var cleanHex: String {
-    var cleaned = self
-    if cleaned.hasPrefix("0x") {
-      cleaned.removeFirst(2)
-    }
-
-    if let i = Int(self, radix: 16) {
-      if i & 0xFF00_0000 == 0xFF00_0000 {
-        return String(format: "0x%X", i & 0xFFFF)
-      } else {
-        return String(format: "0x%X", i & 0xFFFFFF)
-      }
-    }
-
-    while cleaned.hasPrefix("0") {
-      cleaned.removeFirst()
-    }
-    return "0x" + cleaned.uppercased()
   }
 }

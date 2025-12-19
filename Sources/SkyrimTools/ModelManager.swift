@@ -16,11 +16,13 @@ class ModelManager {
   let outfitsURL: URL
   let peopleURL: URL
   let armorsURL: URL
+  let sleepSetsURL: URL
 
   private(set) var mods: [String: ModRecord] = [:]
   private(set) var outfits: [String: FormReference] = [:]
   private(set) var people: [String: PersonRecord] = [:]
   private(set) var armors: [String: ArmorRecord] = [:]
+  private(set) var sleepSets: [String: SleepSet] = [:]
 
   private var modifiedMods: Set<String> = []
   private var modifiedOutfits: Set<String> = []
@@ -41,6 +43,7 @@ class ModelManager {
     self.outfitsURL = dataURL.appending(path: "Outfits")
     self.peopleURL = dataURL.appending(path: "People")
     self.armorsURL = dataURL.appending(path: "Armors")
+    self.sleepSetsURL = dataURL.appending(path: "SleepSets")
 
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -51,6 +54,7 @@ class ModelManager {
     try fm.createDirectory(at: outfitsURL, withIntermediateDirectories: true)
     try fm.createDirectory(at: peopleURL, withIntermediateDirectories: true)
     try fm.createDirectory(at: armorsURL, withIntermediateDirectories: true)
+    try fm.createDirectory(at: sleepSetsURL, withIntermediateDirectories: true)
 
     try loadIndexes()
   }
@@ -61,6 +65,7 @@ class ModelManager {
     outfits = try loadIndex(from: outfitsURL, as: FormReference.self)
     people = try loadIndex(from: peopleURL, as: PersonRecord.self)
     armors = try loadIndex(from: armorsURL, as: ArmorRecord.self)
+    sleepSets = try loadIndex(from: sleepSetsURL, as: SleepSet.self)
   }
 
   /// Load a specific index from a directory.
@@ -215,6 +220,23 @@ class ModelManager {
       armors[key] = newValue
       modifiedArmors.insert(key)
     }
+  }
+
+  /// Retrieve a sleep set template if it exists.
+  /// - Parameter key: The sleep set name (filename without extension).
+  /// - Returns: The existing template or `nil` if not present.
+  func sleepSet(_ key: String) -> SleepSet? {
+    sleepSets[key]
+  }
+
+  /// Retrieve a sleep set template, falling back to the supplied default when missing.
+  /// The template is not persisted back to disk; sleep sets are treated as read-only templates.
+  /// - Parameters:
+  ///   - key: The sleep set name (filename without extension).
+  ///   - default: Factory returning a template when one doesn't exist.
+  /// - Returns: The existing or default template.
+  func sleepSet(_ key: String, default factory: () -> SleepSet) -> SleepSet {
+    sleepSets[key] ?? factory()
   }
 
   /// Write all modified records back to disk.
