@@ -41,40 +41,67 @@ struct OverlayCommand: ParsableCommand {
     let decoder = JSONDecoder()
     let configURL = url.appending(path: "config.json")
     let config = try decoder.decode(OverlayConfig.self, from: Data(contentsOf: configURL))
+    let name = url.lastPathComponent
 
     for stage in config.stages {
       if let copyConfig = stage.copy {
-        try copy(copyConfig, at: url, to: outputURL)
+        try copy(copyConfig, at: url, to: outputURL, overlay: name)
       }
 
       if let moveConfig = stage.move {
-        try move(moveConfig, at: url, to: outputURL)
+        try move(moveConfig, at: url, to: outputURL, overlay: name)
       }
 
       if let mergeConfig = stage.merge {
-        try merge(mergeConfig, at: url, to: outputURL)
+        try merge(mergeConfig, at: url, to: outputURL, overlay: name)
       }
     }
   }
 
-  func move(_ config: GroupConfig, at inputRoot: URL, to outputRoot: URL) throws {
-    for input in config.from {
+  func contentsExcludingConfig(at url: URL) -> [String] {
+    guard
+      let all = try? FileManager.default.contentsOfDirectory(
+        at: url, includingPropertiesForKeys: [])
+    else {
+      return []
+    }
+
+    return
+      all
+      .filter { $0.lastPathComponent != "config.json" }
+      .map { $0.lastPathComponent }
+  }
+
+  func move(_ config: MoveConfig, at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
+    let from = config.from ?? contentsExcludingConfig(at: inputRoot)
+    for input in from {
       let inputURL = inputRoot.appending(path: input)
       let outputURL = outputRoot.appending(path: config.to).appending(
         path: inputURL.lastPathComponent)
-      try inputURL.copy(to: outputURL)
-      print("moved \(inputURL.lastPathComponent) to \(outputURL.lastPathComponent)")
+
+      do {
+        try inputURL.copy(to: outputURL)
+        print(
+          "\(overlay): moved \(inputURL.lastPathComponent) to \(outputURL.deletingLastPathComponent().lastPathComponent)/"
+        )
+      } catch {
+        print("\(overlay): failed to move \(inputURL.lastPathComponent)")
+      }
     }
   }
 
-  func copy(_ config: CopyConfig, at root: URL, to outputURL: URL) throws {
+  func copy(_ config: CopyConfig, at root: URL, to outputURL: URL, overlay: String) throws {
     let inputURL = root.appending(path: config.from)
     let destination = outputURL.appending(path: config.to)
-    try inputURL.copy(to: destination)
-    print("copied \(inputURL.lastPathComponent) to \(destination.lastPathComponent)")
+    do {
+      try inputURL.copy(to: destination)
+      print("\(overlay): copied \(inputURL.lastPathComponent) to \(destination.lastPathComponent)")
+    } catch {
+      print("\(overlay): failed to copy \(inputURL.lastPathComponent)")
+    }
   }
 
-  func merge(_ config: GroupConfig, at root: URL, to outputURL: URL) throws {
+  func merge(_ config: GroupConfig, at root: URL, to outputURL: URL, overlay: String) throws {
     let inputs = config.from.compactMap {
       try? JSONFile(contentsOf: root.appending(path: "\($0).json"))
     }
@@ -82,13 +109,17 @@ struct OverlayCommand: ParsableCommand {
     let merged = try merger.merge(inputs)
     let mergedURL = outputURL.appending(path: config.to)
     try merged.formatted.write(to: mergedURL)
-    print("merged \(config.from.count) files to \(mergedURL.lastPathComponent)")
+    print("\(overlay): merged \(config.from.count) files to \(mergedURL.lastPathComponent)")
   }
 }
 
-
 struct GroupConfig: Codable {
   let from: [String]
+  let to: String
+}
+
+struct MoveConfig: Codable {
+  let from: [String]?
   let to: String
 }
 
@@ -103,6 +134,6 @@ struct CopyConfig: Codable {
 
 struct OverlayStage: Codable {
   let copy: CopyConfig?
-  let move: GroupConfig?
+  let move: MoveConfig?
   let merge: GroupConfig?
 }
