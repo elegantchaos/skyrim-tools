@@ -22,9 +22,9 @@ import Testing
     let b = root.appending(path: "b.txt")
     try "first".write(to: a)
     try a.copy(to: b)
-    #expect(try String(contentsOf: b) == "first")
+    #expect(try String(contentsOf: b, encoding: .utf8) == "first")
     try "second".write(to: a)
     try a.copy(to: b)
-    #expect(try String(contentsOf: b) == "second")
+    #expect(try String(contentsOf: b, encoding: .utf8) == "second")
   }
 }

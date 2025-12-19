@@ -25,8 +25,8 @@ final class CommandsIntegrationTests {
 
   @Test func testMergeCommand() async throws {
     let exe = toolPath()
-    let file1 = try #require(TestData.testData("input1.json")).path
-    let file2 = try #require(TestData.testData("input2.json")).path
+    let file1 = TestData.testData("input1.json").path
+    let file2 = TestData.testData("input2.json").path
     let result = try await Subprocess.run(
       .name(exe), arguments: ["merge", file1, file2, "--unique-lists"],
       output: .string(limit: 8192)
@@ -40,7 +40,7 @@ final class CommandsIntegrationTests {
 
   @Test func testNPCSCommand() async throws {
     let exe = toolPath()
-    let npcsPath = try #require(TestData.testData("npcs.json")).path
+    let npcsPath = TestData.testData("npcs.json").path
     let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
     let rsvOut = tempRoot.appending(path: "RSV.ini").path
@@ -69,7 +69,7 @@ final class CommandsIntegrationTests {
     // Create a temp directory and copy the mods file
     let tempMods = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempMods, withIntermediateDirectories: true)
-    let modFile = try #require(TestData.testData("[COCO]Lingerie.esp.json"))
+    let modFile = TestData.testData("[COCO]Lingerie.esp.json")
     try FileManager.default.copyItem(
       at: modFile, to: tempMods.appending(path: "[COCO]Lingerie.esp.json"))
     let modsDir = tempMods.path
@@ -97,7 +97,7 @@ final class CommandsIntegrationTests {
     // Create a temp directory and copy the input file
     let tempInput = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempInput, withIntermediateDirectories: true)
-    let distrFile = try #require(TestData.testData("sample_DISTR.ini"))
+    let distrFile = TestData.testData("sample_DISTR.ini")
     try FileManager.default.copyItem(
       at: distrFile, to: tempInput.appending(path: "sample_DISTR.ini"))
     let inputDir = tempInput.path
