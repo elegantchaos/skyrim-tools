@@ -52,6 +52,10 @@ struct OverlayCommand: ParsableCommand {
         try move(moveConfig, at: url, to: outputURL, overlay: name)
       }
 
+      if let destination = stage.moveall {
+        try moveall(at: url, to: outputURL.appending(path: destination), overlay: name)
+      }
+
       if let mergeConfig = stage.merge {
         try merge(mergeConfig, at: url, to: outputURL, overlay: name)
       }
@@ -72,12 +76,28 @@ struct OverlayCommand: ParsableCommand {
       .map { $0.lastPathComponent }
   }
 
-  func move(_ config: MoveConfig, at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
-    let from = config.from ?? contentsExcludingConfig(at: inputRoot)
-    for input in from {
+  func move(_ config: GroupConfig, at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
+    for input in config.from {
       let inputURL = inputRoot.appending(path: input)
       let outputURL = outputRoot.appending(path: config.to).appending(
         path: inputURL.lastPathComponent)
+
+      do {
+        try inputURL.copy(to: outputURL)
+        print(
+          "\(overlay): moved \(inputURL.lastPathComponent) to \(outputURL.deletingLastPathComponent().lastPathComponent)/"
+        )
+      } catch {
+        print("\(overlay): failed to move \(inputURL.lastPathComponent)")
+      }
+    }
+  }
+
+  func moveall(at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
+    let from = contentsExcludingConfig(at: inputRoot)
+    for input in from {
+      let inputURL = inputRoot.appending(path: input)
+      let outputURL = outputRoot.appending(path: inputURL.lastPathComponent)
 
       do {
         try inputURL.copy(to: outputURL)
@@ -118,11 +138,6 @@ struct GroupConfig: Codable {
   let to: String
 }
 
-struct MoveConfig: Codable {
-  let from: [String]?
-  let to: String
-}
-
 struct OverlayConfig: Codable {
   let stages: [OverlayStage]
 }
@@ -134,6 +149,7 @@ struct CopyConfig: Codable {
 
 struct OverlayStage: Codable {
   let copy: CopyConfig?
-  let move: MoveConfig?
+  let move: GroupConfig?
+  let moveall: String?
   let merge: GroupConfig?
 }
