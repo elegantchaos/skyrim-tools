@@ -42,63 +42,33 @@ struct UnderwearCommand: LoggableCommand {
     let underwearRefs: Set<String> = Set(
       manager.armors.values.compactMap { armor in
         guard armor.useAsUnderwear == true else { return nil }
-        guard let formID = armor.id.formID else {
+        guard let ref = armor.id.idModReference else {
           log("Skipping armour missing formID", path: [armor.id.mod])
           return nil
         }
-        return "\(formID)~\(armor.id.mod)"
+        return ref
       }
     )
 
     let blacklistRefs: Set<String> = Set(
       manager.people.compactMap { (name, person) in
         guard person.blacklistForUnderwear == true else { return nil }
-        guard let id = person.id, let formID = id.formID else {
+        guard let id = person.id, let ref = id.idModReference else {
           log("Warning: Person \(name) has blacklistForUnderwear but no id", path: [name])
           return nil
         }
-        return "\(formID)~\(id.mod)"
+        return ref
       }
     )
 
     let sortedRefs =
       underwearRefs
-      .sorted {
-        let s1 = $0.split(separator: "~")
-        let s2 = $1.split(separator: "~")
-        if let u1 = s1.last, let u2 = s2.last {
-          if u1 == u2 {
-            if let f1 = s1.first, let f2 = s2.first,
-              let u1 = UInt(f1), let u2 = UInt(f2)
-            {
-              return u1 < u2
-            }
-          } else {
-            return u1 < u2
-          }
-        }
-        return $0 < $1
-      }
+      .sorted(by: String.idModReferencesAreIncreasing)
       .map { "Underwear = \($0)" }
 
     let sortedBlacklist =
       blacklistRefs
-      .sorted {
-        let s1 = $0.split(separator: "~")
-        let s2 = $1.split(separator: "~")
-        if let u1 = s1.last, let u2 = s2.last {
-          if u1 == u2 {
-            if let f1 = s1.first, let f2 = s2.first,
-              let u1 = UInt(f1), let u2 = UInt(f2)
-            {
-              return u1 < u2
-            }
-          } else {
-            return u1 < u2
-          }
-        }
-        return $0 < $1
-      }
+      .sorted(by: String.idModReferencesAreIncreasing)
       .map { "Ignore = \($0)" }
 
     var lines: [String] = ["[General]"]

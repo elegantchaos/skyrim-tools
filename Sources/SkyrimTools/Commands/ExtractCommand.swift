@@ -96,7 +96,7 @@ struct ExtractCommand: LoggableCommand {
       var outfit: FormReference?
       do {
         let defaultOutfit = try FormReference(parse: String(formPart), comment: entry.comment)
-        if let outfitKey = defaultOutfit.spidName {
+        if let outfitKey = defaultOutfit.spidReference {
           let found = manager.outfit(outfitKey, default: { defaultOutfit })
           if found != defaultOutfit {
             log("Overwriting existing outfit \(found) with \(defaultOutfit)", path: [source])
@@ -117,7 +117,7 @@ struct ExtractCommand: LoggableCommand {
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
 
-      if let outfit, let outfitKey = outfit.spidName {
+      if let outfit, let outfitKey = outfit.spidReference {
         let modName = URL(fileURLWithPath: outfit.mod).deletingPathExtension().lastPathComponent
         _ = manager.mod(modName, default: { ModRecord() })
 

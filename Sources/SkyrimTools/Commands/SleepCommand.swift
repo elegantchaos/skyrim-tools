@@ -53,7 +53,7 @@ struct SleepCommand: LoggableCommand {
 
     // Write JSON for each sleep set
     for (setName, armors) in setToArmors {
-      let ids = armors.compactMap { $0.sleepName }
+      let ids = armors.compactMap { $0.sleepReference }
       var sleepSet = manager.sleepSet(
         setName, default: { manager.sleepSet("default") ?? SleepSet.empty })
       sleepSet.formList.items = ids

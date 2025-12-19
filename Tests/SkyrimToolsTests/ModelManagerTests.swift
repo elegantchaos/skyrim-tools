@@ -74,7 +74,7 @@ import Testing
     #expect(saved.mod == "Test.esp")
     #expect(saved.name == "Test Outfit")
     let reloaded = try reloadManager(at: root)
-    #expect(reloaded.outfit("TestOutfit")?.spidName == "Test Outfit")
+    #expect(reloaded.outfit("TestOutfit")?.spidReference == "Test Outfit")
   }
 
   @Test func testOutfitUpdateSavesAndLoads() throws {
@@ -90,7 +90,7 @@ import Testing
     #expect(saved.mod == "New.esp")
     #expect(saved.name == "New Outfit")
     let reloaded = try reloadManager(at: root)
-    #expect(reloaded.outfit("NewOutfit")?.sleepName == "0x1234|New.esp")
+    #expect(reloaded.outfit("NewOutfit")?.sleepReference == "0x1234|New.esp")
   }
 
   // Person APIs

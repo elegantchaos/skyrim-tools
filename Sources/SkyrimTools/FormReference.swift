@@ -112,18 +112,43 @@ struct FormReference: Codable, Equatable {
   /// Name for use in a SPID or KID file.
   /// Uses the human-readable name if present,
   /// otherwise combines formID and mod.
-  var spidName: String? {
-    if let name {
-      return name
-    } else if let formID {
-      return "\(formID)~\(mod)"
+  var spidReference: String? {
+    if let ref = name ?? idModReference {
+      return ref
     } else {
       return nil
     }
   }
 
+  /// Combined formID and mod with a ~.
+  var idModReference: String? {
+    if let formID { return "\(formID)~\(mod)" }
+    return nil
+  }
+
   /// Name for use in a sleep set file.
-  var sleepName: String? {
+  var sleepReference: String? {
     formID.map { "\($0)|\(mod)" }
+  }
+
+}
+
+extension String {
+  /// Compare two id~mod references for sorting.
+  static func idModReferencesAreIncreasing(_ ref1: String, _ ref2: String) -> Bool {
+    let s1 = ref1.split(separator: "~")
+    let s2 = ref2.split(separator: "~")
+    if let u1 = s1.last, let u2 = s2.last {
+      if u1 == u2 {
+        if let f1 = s1.first, let f2 = s2.first,
+          let u1 = UInt(f1), let u2 = UInt(f2)
+        {
+          return u1 < u2
+        }
+      } else {
+        return u1 < u2
+      }
+    }
+    return ref1 < ref2
   }
 }

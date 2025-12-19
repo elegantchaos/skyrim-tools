@@ -14,7 +14,7 @@ import Testing
     #expect(ref.formID == "0x800")
     #expect(ref.mod == "FlowerGirlsDESPID.esp")
     #expect(ref.name == "Flower Girls")
-    #expect(ref.spidName == "Flower Girls")
+    #expect(ref.spidReference == "Flower Girls")
   }
 
   @Test func testInvalidFormThrows() {
@@ -31,6 +31,6 @@ import Testing
 
   @Test func testSleepName() {
     let ref = FormReference(formID: "0xABCD", editorID: nil, mod: "Mod.esp", name: nil)
-    #expect(ref.sleepName == "0xABCD|Mod.esp")
+    #expect(ref.sleepReference == "0xABCD|Mod.esp")
   }
 }
