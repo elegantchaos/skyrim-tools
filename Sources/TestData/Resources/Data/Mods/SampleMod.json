@@ -1,14 +1,16 @@
 {
+  "skipOBody": true,
+  "skipOBodyFemale": false,
+  "skipOBodyMale": true,
+  "skipRSV": false,
   "armours": [
-    {
-      "formID": "0x00112233",
-      "editorID": "Armor_X",
-      "name": "Armor X"
-    },
-    {
-      "formID": "0x00445566",
-      "editorID": "Armor_Y",
-      "name": "Armor Y"
-    }
+    "Armor X",
+    "Armor Y"
+  ],
+  "outfits": [
+    "Test Outfit"
+  ],
+  "npcs": [
+    "Ysolda"
   ]
 }

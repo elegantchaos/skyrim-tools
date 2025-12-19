@@ -53,7 +53,6 @@ class ModelManager {
     try fm.createDirectory(at: armorsURL, withIntermediateDirectories: true)
 
     try loadIndexes()
-    try migrateModArmor()
   }
 
   /// Load indexes from disk.
@@ -259,56 +258,7 @@ class ModelManager {
   }
 }
 
-extension ModelManager {
-  struct SleepArmourRecord: Codable, Equatable {
-    let formID: String?
-    let editorID: String?
-    let name: String?
-  }
-
-  struct ModArmoursRecord: Decodable {
-    let armours: [SleepArmourRecord]
-  }
-
-  private func migrateModArmor() throws {
-    let fm = FileManager.default
-    let files = try fm.contentsOfDirectory(at: modsURL, includingPropertiesForKeys: nil)
-    for fileURL in files {
-      guard fileURL.pathExtension.lowercased() == "json" else { continue }
-      let modFileName = fileURL.deletingPathExtension().lastPathComponent
-      let modKey = modFileName.unescapedKey
-      do {
-        let data = try Data(contentsOf: fileURL)
-        let mod = try decoder.decode(ModArmoursRecord.self, from: data)
-        print("Migrating armors for mod \(modKey)")
-        for armour in mod.armours {
-          if let armorKey = armour.name {
-            _ = armor(
-              armorKey, default: { ArmorRecord(from: armour, mod: modKey) })
-          }
-        }
-
-        let sortedArmors = mod.armours.map { $0.name }.compactMap { $0 }.sorted()
-        let updatedMod = ModRecord(armours: sortedArmors)
-        updateMod(modKey, updatedMod)
-      } catch {
-
-      }
-    }
-  }
-}
-
-extension ArmorRecord {
-  init(from: ModelManager.SleepArmourRecord, mod: String) {
-    self.id = FormReference(
-      formID: from.formID,
-      editorID: from.editorID,
-      mod: mod,
-      name: from.name
-    )
-    self.sleepSets = [URL(fileURLWithPath: mod).deletingPathExtension().lastPathComponent]
-  }
-}
+// Migration of legacy mod armour formats has been removed.
 
 extension String {
   /// Escape a record key to remove slashes for use as a filename component.

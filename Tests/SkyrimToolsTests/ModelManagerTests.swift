@@ -16,15 +16,11 @@ import Testing
 
     let manager = try ModelManager(dataURL: dataTempURL)
 
-    // Migration should create armor records from SampleMod.json
-    #expect(manager.armor("Armor X") != nil)
-    #expect(manager.armor("Armor Y") != nil)
-
-    // Mod should be updated with sorted armours
+    // Mod should load with armours defined
     let sampleModName = URL(fileURLWithPath: "SampleMod").lastPathComponent
     let modRecord = manager.mod(sampleModName)
     #expect(modRecord != nil)
-    #expect(modRecord?.armours == ["Armor X", "Armor Y"])  // sorted
+    #expect(modRecord?.armours == ["Armor X", "Armor Y"])  // present
 
     // Create and update records, then save
     _ = manager.mod("TestMod", default: { ModRecord(skipOBody: true) })
