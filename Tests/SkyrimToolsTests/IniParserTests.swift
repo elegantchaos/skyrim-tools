@@ -4,6 +4,7 @@
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 import Foundation
+import TestData
 import Testing
 
 @testable import SkyrimTools
@@ -20,8 +21,7 @@ import Testing
 
       Keyword=RSVignore|Ysolda
       """
-    let temp = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
-    try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
+    let temp = try makeTempDirectory()
     let file = temp.appending(path: "test.ini")
     try ini.write(to: file, atomically: true, encoding: .utf8)
 

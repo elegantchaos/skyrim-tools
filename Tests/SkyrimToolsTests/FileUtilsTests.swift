@@ -4,20 +4,21 @@
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 import Foundation
+import TestData
 import Testing
 
 @testable import SkyrimTools
 
 @Suite struct FileUtilsTests {
   @Test func testStringWriteCreatesParents() throws {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
+    let root = try makeTempDirectory()
     let target = root.appending(path: "a/b/c.txt")
     try "hello".write(to: target)
     #expect(FileManager.default.fileExists(atPath: target.path))
   }
 
   @Test func testURLCopyOverwrites() throws {
-    let root = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
+    let root = try makeTempDirectory()
     let a = root.appending(path: "a.txt")
     let b = root.appending(path: "b.txt")
     try "first".write(to: a)

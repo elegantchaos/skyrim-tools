@@ -12,27 +12,7 @@ import Testing
 @Suite struct ModelManagerTests {
   @Test func testLoadAndMigrationFromResources() throws {
     let fm = FileManager.default
-    let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
-    try fm.createDirectory(at: tempRoot, withIntermediateDirectories: true)
-
-    // Recreate Data folder structure and copy test files
-    let dataTempURL = tempRoot.appending(path: "Data")
-    try fm.createDirectory(
-      at: dataTempURL.appending(path: "Mods"), withIntermediateDirectories: true)
-    try fm.createDirectory(
-      at: dataTempURL.appending(path: "Outfits"), withIntermediateDirectories: true)
-    try fm.createDirectory(
-      at: dataTempURL.appending(path: "People"), withIntermediateDirectories: true)
-
-    try fm.copyItem(
-      at: testData("SampleMod.json"),
-      to: dataTempURL.appending(path: "Mods/SampleMod.json"))
-    try fm.copyItem(
-      at: testData("FlowerGirls Outfit.json"),
-      to: dataTempURL.appending(path: "Outfits/FlowerGirls Outfit.json"))
-    try fm.copyItem(
-      at: testData("Ysolda.json"),
-      to: dataTempURL.appending(path: "People/Ysolda.json"))
+    let dataTempURL = try makeModelDataFixture()
 
     let manager = try ModelManager(dataURL: dataTempURL)
 

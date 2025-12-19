@@ -24,7 +24,7 @@ final class CommandsIntegrationTests {
       .deletingLastPathComponent()  // CommandsIntegrationTests.swift
       .deletingLastPathComponent()  // SkyrimToolsIntegrationTests
       .deletingLastPathComponent()  // Tests
-    let executablePath = packageRoot.appending(path: ".build/arm64-apple-macosx/debug/skyrim-tools")
+    let executablePath = packageRoot.appending(path: ".build/debug/skyrim-tools")
     return executablePath.path
   }
 
