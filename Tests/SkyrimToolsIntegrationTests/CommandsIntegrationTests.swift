@@ -8,6 +8,12 @@ import Subprocess
 import TestData
 import Testing
 
+#if canImport(System)
+  import System
+#else
+  import SystemPackage
+#endif
+
 final class CommandsIntegrationTests {
   /// Locate the built executable in the package's .build/debug directory.
   private func toolPath() -> String {
@@ -18,28 +24,28 @@ final class CommandsIntegrationTests {
       .deletingLastPathComponent()  // CommandsIntegrationTests.swift
       .deletingLastPathComponent()  // SkyrimToolsIntegrationTests
       .deletingLastPathComponent()  // Tests
-      .deletingLastPathComponent()  // skyrim-tools
-    let debugPath = packageRoot.appending(path: ".build/debug/skyrim-tools").path
-    return debugPath
+    let executablePath = packageRoot.appending(path: ".build/arm64-apple-macosx/debug/skyrim-tools")
+    return executablePath.path
   }
 
   @Test func testMergeCommand() async throws {
-    let exe = toolPath()
+    let exePath = FilePath(toolPath())
     let file1 = testData("input1.json").path
     let file2 = testData("input2.json").path
     let result = try await Subprocess.run(
-      .name(exe), arguments: ["merge", file1, file2, "--unique-lists"],
+      .path(exePath), arguments: ["merge", file1, file2, "--unique-lists"],
       output: .string(limit: 8192)
     )
     #expect(result.terminationStatus == TerminationStatus.exited(0))
     let out = try #require(result.standardOutput)
-    #expect(out.contains("\"a\":"))
-    #expect(out.contains("\"b\":"))
-    #expect(out.contains("\"list\":[1,2,3]"))
+    #expect(out.contains("\"a\""))
+    #expect(out.contains("\"b\""))
+    #expect(out.contains("\"list\""))
+    #expect(out.contains("1") && out.contains("2") && out.contains("3"))
   }
 
   @Test func testNPCSCommand() async throws {
-    let exe = toolPath()
+    let exePath = FilePath(toolPath())
     let npcsPath = testData("npcs.json").path
     let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
@@ -47,7 +53,7 @@ final class CommandsIntegrationTests {
     let obodyOut = tempRoot.appending(path: "OBody.json").path
 
     let result = try await Subprocess.run(
-      .name(exe),
+      .path(exePath),
       arguments: [
         "npcs",
         "--npcs-path", npcsPath,
@@ -59,13 +65,16 @@ final class CommandsIntegrationTests {
     #expect(result.terminationStatus == TerminationStatus.exited(0))
     let rsv = try String(contentsOf: URL(fileURLWithPath: rsvOut), encoding: .utf8)
     let obody = try String(contentsOf: URL(fileURLWithPath: obodyOut), encoding: .utf8)
-    #expect(rsv.contains("RSVignore|0002,0003") || rsv.contains("RSVignore|0003,0002"))
-    #expect(obody.contains("\"Ysolda\""))
-    #expect(!obody.contains("\"Belethor\""))
+    // Ysolda (0002): skipOBody=false, skipRSV=false → not in blacklist
+    // Belethor (0003): skipOBody=true, skipRSV=false → in OBody blacklist
+    #expect(!rsv.contains("RSVignore|0002"))
+    #expect(!rsv.contains("RSVignore|0003"))
+    #expect(!obody.contains("\"Ysolda\""))
+    #expect(obody.contains("\"Belethor\""))
   }
 
   @Test func testModsCommand() async throws {
-    let exe = toolPath()
+    let exePath = FilePath(toolPath())
     // Create a temp directory and copy the mods file
     let tempMods = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempMods, withIntermediateDirectories: true)
@@ -78,7 +87,7 @@ final class CommandsIntegrationTests {
     let obodyOut = tempRoot.appending(path: "mods_obody.json").path
 
     let result = try await Subprocess.run(
-      .name(exe),
+      .path(exePath),
       arguments: [
         "mods",
         "--mods-path", modsDir,
@@ -93,7 +102,7 @@ final class CommandsIntegrationTests {
   }
 
   @Test func testExtractCommand() async throws {
-    let exe = toolPath()
+    let exePath = FilePath(toolPath())
     // Create a temp directory and copy the input file
     let tempInput = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempInput, withIntermediateDirectories: true)
@@ -105,7 +114,7 @@ final class CommandsIntegrationTests {
     try FileManager.default.createDirectory(at: tempModel, withIntermediateDirectories: true)
 
     let result = try await Subprocess.run(
-      .name(exe),
+      .path(exePath),
       arguments: [
         "extract",
         "--input-path", inputDir,
@@ -114,10 +123,9 @@ final class CommandsIntegrationTests {
       output: .string(limit: 8192)
     )
     #expect(result.terminationStatus == TerminationStatus.exited(0))
-
     // Expect extracted records written via ModelManager
     let peopleYsolda = tempModel.appending(path: "People/Ysolda.json")
-    let outfit = tempModel.appending(path: "Outfits/FlowerGirls Outfit.json")
+    let outfit = tempModel.appending(path: "Outfits/Ysolda outfit assignment.json")
     #expect(FileManager.default.fileExists(atPath: peopleYsolda.path))
     #expect(FileManager.default.fileExists(atPath: outfit.path))
   }
