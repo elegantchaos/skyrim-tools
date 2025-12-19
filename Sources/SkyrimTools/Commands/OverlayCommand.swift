@@ -48,12 +48,12 @@ struct OverlayCommand: ParsableCommand {
         try copy(copyConfig, at: url, to: outputURL, overlay: name)
       }
 
-      if let moveConfig = stage.move {
-        try move(moveConfig, at: url, to: outputURL, overlay: name)
+      if let moveConfig = stage.some {
+        try moveSome(moveConfig, at: url, to: outputURL, overlay: name)
       }
 
-      if let destination = stage.moveall {
-        try moveall(at: url, to: outputURL.appending(path: destination), overlay: name)
+      if let destination = stage.move {
+        try moveAll(at: url, to: outputURL.appending(path: destination), overlay: name)
       }
 
       if let mergeConfig = stage.merge {
@@ -76,7 +76,9 @@ struct OverlayCommand: ParsableCommand {
       .map { $0.lastPathComponent }
   }
 
-  func move(_ config: GroupConfig, at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
+  func moveSome(_ config: GroupConfig, at inputRoot: URL, to outputRoot: URL, overlay: String)
+    throws
+  {
     for input in config.from {
       let inputURL = inputRoot.appending(path: input)
       let outputURL = outputRoot.appending(path: config.to).appending(
@@ -93,7 +95,7 @@ struct OverlayCommand: ParsableCommand {
     }
   }
 
-  func moveall(at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
+  func moveAll(at inputRoot: URL, to outputRoot: URL, overlay: String) throws {
     let from = contentsExcludingConfig(at: inputRoot)
     for input in from {
       let inputURL = inputRoot.appending(path: input)
@@ -102,7 +104,7 @@ struct OverlayCommand: ParsableCommand {
       do {
         try inputURL.copy(to: outputURL)
         print(
-          "\(overlay): moved \(inputURL.lastPathComponent) to \(outputURL.deletingLastPathComponent().lastPathComponent)/"
+          "\(overlay): moved \"\(inputURL.lastPathComponent)\" to \"\(outputURL.deletingLastPathComponent().lastPathComponent)\"/"
         )
       } catch {
         print("\(overlay): failed to move \(inputURL.lastPathComponent)")
@@ -115,7 +117,9 @@ struct OverlayCommand: ParsableCommand {
     let destination = outputURL.appending(path: config.to)
     do {
       try inputURL.copy(to: destination)
-      print("\(overlay): copied \(inputURL.lastPathComponent) to \(destination.lastPathComponent)")
+      print(
+        "\(overlay): copied \"\(inputURL.lastPathComponent)\" to \"\(destination.lastPathComponent)\""
+      )
     } catch {
       print("\(overlay): failed to copy \(inputURL.lastPathComponent)")
     }
@@ -129,7 +133,7 @@ struct OverlayCommand: ParsableCommand {
     let merged = try merger.merge(inputs)
     let mergedURL = outputURL.appending(path: config.to)
     try merged.formatted.write(to: mergedURL)
-    print("\(overlay): merged \(config.from.count) files to \(mergedURL.lastPathComponent)")
+    print("\(overlay): merged \(config.from.count) files to \"\(mergedURL.lastPathComponent)\"")
   }
 }
 
@@ -149,7 +153,7 @@ struct CopyConfig: Codable {
 
 struct OverlayStage: Codable {
   let copy: CopyConfig?
-  let move: GroupConfig?
-  let moveall: String?
+  let some: GroupConfig?
+  let move: String?
   let merge: GroupConfig?
 }
