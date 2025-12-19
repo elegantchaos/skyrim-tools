@@ -22,6 +22,7 @@ struct RootCommand: AsyncParsableCommand {
         NPCSCommand.self,
         OverlayCommand.self,
         PullModsCommand.self,
+        UnderwearCommand.self,
         SleepCommand.self,
         ExtractCommand.self,
       ]

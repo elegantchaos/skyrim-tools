@@ -8,10 +8,12 @@ import Foundation
 /// A record for an armor item.
 struct ArmorRecord: Codable, Equatable {
   let id: FormReference
+  let useAsUnderwear: Bool?
   var sleepSets: [String]?
 
-  init(id: FormReference, sleepSets: [String]? = nil) {
+  init(id: FormReference, useAsUnderwear: Bool? = nil, sleepSets: [String]? = nil) {
     self.id = id
+    self.useAsUnderwear = useAsUnderwear
     self.sleepSets = sleepSets
   }
 }
