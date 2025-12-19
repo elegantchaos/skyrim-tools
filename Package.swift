@@ -25,6 +25,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
     .package(url: "https://github.com/elegantchaos/Matchable.git", from: "1.0.0"),
     .package(url: "https://github.com/elegantchaos/Versionator.git", from: "2.1.0"),
+    .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "0.2.1"),
   ],
 
   targets: [
@@ -43,11 +44,19 @@ let package = Package(
       ]
     ),
 
+    .target(
+      name: "TestData",
+      resources: [
+        .process("Resources")
+      ]
+    ),
+
     .testTarget(
       name: "SkyrimToolsTests",
       dependencies: [
         "SkyrimTools",
         .product(name: "Matchable", package: "Matchable"),
+        "TestData",
       ]
     ),
 
@@ -56,6 +65,15 @@ let package = Package(
       dependencies: [
         "DictionaryMerger",
         .product(name: "Matchable", package: "Matchable"),
+      ]
+    ),
+
+    .testTarget(
+      name: "SkyrimToolsIntegrationTests",
+      dependencies: [
+        "SkyrimTools",
+        "TestData",
+        .product(name: "Subprocess", package: "swift-subprocess"),
       ]
     ),
   ]

@@ -1,0 +1,14 @@
+{
+  "armours": [
+    {
+      "formID": "0x00112233",
+      "editorID": "Armor_X",
+      "name": "Armor X"
+    },
+    {
+      "formID": "0x00445566",
+      "editorID": "Armor_Y",
+      "name": "Armor Y"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "0002": {
+    "formID": "0x00000002",
+    "mod": "Skyrim.esm",
+    "name": "Ysolda",
+    "skipOBody": false,
+    "skipRSV": false
+  },
+  "0003": {
+    "formID": "0x00000003",
+    "mod": "Skyrim.esm",
+    "name": "Belethor",
+    "skipOBody": true,
+    "skipRSV": false
+  }
+}
