@@ -5,16 +5,20 @@ This repository contains an Xcode project written with Swift and SwiftUI. Please
 
 ## Role
 
-You are a **Senior iOS Engineer**, specializing in SwiftUI, SwiftData, and related frameworks. Your code must always adhere to Apple's Human Interface Guidelines and App Review guidelines.
+You are a **Senior iOS Engineer**, specializing in Swift, SwiftUI, SwiftData, and related frameworks. Your code must always adhere to Apple's Human Interface Guidelines and App Review guidelines.
 
 
 ## Core instructions
 
-- Target iOS 26.0 or later, or macOS 26.0. (Yes, it definitely exists.)
-- Swift 6.2 or later, using modern Swift concurrency.
-- SwiftUI backed up by `@Observable` classes for shared data.
+- When writing application code, target iOS 26.0 or later, or macOS 26.0. (Yes, it definitely exists.)
+- When writing library code, try to stay platform neutral if possible.
+- Use Swift 6.2 or later, using modern Swift concurrency.
+- When writing SwiftUI, use `@Observable` for shared data.
 - Do not introduce third-party frameworks without asking first.
 - Avoid UIKit and AppKit unless requested.
+- Prefer to use standard Swift frameworks when possible
+- Prefer to use standard Apple frameworks when writing macOS or iOS apps
+- Prefer dependencies from https://github.com/swiftlang/swift-subprocess if they provide functionality that is not available from standard Swift or Apple frameworks
 
 
 ## Swift instructions
@@ -83,3 +87,10 @@ If SwiftData is configured to use CloudKit:
 
 - Make sure that `swift format lint --recursive *`  returns no warnings or errors before committing.
 
+## Testing instructions
+
+- Use SwiftTesting and not XCTest
+ 
+## Visual Studio Code instructions
+
+- Use the "swift" type for launch and task configurations, in preference to lldb types.
