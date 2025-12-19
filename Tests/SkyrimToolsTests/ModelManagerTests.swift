@@ -9,33 +9,6 @@ import Testing
 
 @testable import SkyrimTools
 
-extension Bundle {
-  fileprivate static let testData: Bundle = {
-    // Find the bundle relative to the test source file location
-    let testFileURL = URL(fileURLWithPath: #filePath)
-    let packageRoot = testFileURL.deletingLastPathComponent().deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let buildDir = packageRoot.appending(path: ".build/arm64-apple-macosx/debug")
-    let bundleURL = buildDir.appending(path: "skyrim-tools_TestData.bundle")
-
-    if let bundle = Bundle(url: bundleURL) {
-      return bundle
-    }
-
-    fatalError("Could not locate TestData bundle at \(bundleURL.path)")
-  }()
-
-  static func testData(_ name: String) -> URL {
-    let components = name.split(separator: ".", maxSplits: 1)
-    let fileName = String(components[0])
-    let fileExtension = components.count > 1 ? String(components[1]) : ""
-    guard let url = testData.url(forResource: fileName, withExtension: fileExtension) else {
-      fatalError("Could not find test data file: \(name)")
-    }
-    return url
-  }
-}
-
 @Suite struct ModelManagerTests {
   @Test func testLoadAndMigrationFromResources() throws {
     let fm = FileManager.default
@@ -52,13 +25,13 @@ extension Bundle {
       at: dataTempURL.appending(path: "People"), withIntermediateDirectories: true)
 
     try fm.copyItem(
-      at: Bundle.testData("SampleMod.json"),
+      at: TestData.testData("SampleMod.json"),
       to: dataTempURL.appending(path: "Mods/SampleMod.json"))
     try fm.copyItem(
-      at: Bundle.testData("FlowerGirls Outfit.json"),
+      at: TestData.testData("FlowerGirls Outfit.json"),
       to: dataTempURL.appending(path: "Outfits/FlowerGirls Outfit.json"))
     try fm.copyItem(
-      at: Bundle.testData("Ysolda.json"),
+      at: TestData.testData("Ysolda.json"),
       to: dataTempURL.appending(path: "People/Ysolda.json"))
 
     let manager = try ModelManager(dataURL: dataTempURL)

@@ -5,34 +5,8 @@
 
 import Foundation
 import Subprocess
+import TestData
 import Testing
-
-extension Bundle {
-  fileprivate static let testData: Bundle = {
-    // Find the bundle relative to the test source file location
-    let testFileURL = URL(fileURLWithPath: #filePath)
-    let packageRoot = testFileURL.deletingLastPathComponent().deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let buildDir = packageRoot.appending(path: ".build/arm64-apple-macosx/debug")
-    let bundleURL = buildDir.appending(path: "skyrim-tools_TestData.bundle")
-
-    if let bundle = Bundle(url: bundleURL) {
-      return bundle
-    }
-
-    fatalError("Could not locate TestData bundle at \(bundleURL.path)")
-  }()
-
-  static func testData(_ name: String) -> URL {
-    let components = name.split(separator: ".", maxSplits: 1)
-    let fileName = String(components[0])
-    let fileExtension = components.count > 1 ? String(components[1]) : ""
-    guard let url = testData.url(forResource: fileName, withExtension: fileExtension) else {
-      fatalError("Could not find test data file: \(name)")
-    }
-    return url
-  }
-}
 
 final class CommandsIntegrationTests {
   /// Locate the built executable in the package's .build/debug directory.
@@ -51,8 +25,8 @@ final class CommandsIntegrationTests {
 
   @Test func testMergeCommand() async throws {
     let exe = toolPath()
-    let file1 = try #require(Bundle.testData("input1.json")).path
-    let file2 = try #require(Bundle.testData("input2.json")).path
+    let file1 = try #require(TestData.testData("input1.json")).path
+    let file2 = try #require(TestData.testData("input2.json")).path
     let result = try await Subprocess.run(
       .name(exe), arguments: ["merge", file1, file2, "--unique-lists"],
       output: .string(limit: 8192)
@@ -66,7 +40,7 @@ final class CommandsIntegrationTests {
 
   @Test func testNPCSCommand() async throws {
     let exe = toolPath()
-    let npcsPath = try #require(Bundle.testData("npcs.json")).path
+    let npcsPath = try #require(TestData.testData("npcs.json")).path
     let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
     let rsvOut = tempRoot.appending(path: "RSV.ini").path
@@ -95,7 +69,7 @@ final class CommandsIntegrationTests {
     // Create a temp directory and copy the mods file
     let tempMods = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempMods, withIntermediateDirectories: true)
-    let modFile = try #require(Bundle.testData("[COCO]Lingerie.esp.json"))
+    let modFile = try #require(TestData.testData("[COCO]Lingerie.esp.json"))
     try FileManager.default.copyItem(
       at: modFile, to: tempMods.appending(path: "[COCO]Lingerie.esp.json"))
     let modsDir = tempMods.path
@@ -123,7 +97,7 @@ final class CommandsIntegrationTests {
     // Create a temp directory and copy the input file
     let tempInput = URL(fileURLWithPath: NSTemporaryDirectory()).appending(path: UUID().uuidString)
     try FileManager.default.createDirectory(at: tempInput, withIntermediateDirectories: true)
-    let distrFile = try #require(Bundle.testData("sample_DISTR.ini"))
+    let distrFile = try #require(TestData.testData("sample_DISTR.ini"))
     try FileManager.default.copyItem(
       at: distrFile, to: tempInput.appending(path: "sample_DISTR.ini"))
     let inputDir = tempInput.path

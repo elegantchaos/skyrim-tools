@@ -6,9 +6,15 @@
 import Foundation
 
 public enum TestData {
-  /// Return the URL for a bundled test resource.
-  /// Pass nested paths like "Merge/input1".
-  public static func resourceURL(_ path: String, ext: String? = nil) -> URL? {
-    Bundle.module.url(forResource: path, withExtension: ext)
+  /// Return the URL for a bundled test resource by filename.
+  /// Example: `TestData.testData("input1.json")`
+  public static func testData(_ name: String) -> URL {
+    let components = name.split(separator: ".", maxSplits: 1)
+    let fileName = String(components[0])
+    let fileExtension = components.count > 1 ? String(components[1]) : ""
+    guard let url = Bundle.module.url(forResource: fileName, withExtension: fileExtension) else {
+      fatalError("Could not find test data file: \(name)")
+    }
+    return url
   }
 }
