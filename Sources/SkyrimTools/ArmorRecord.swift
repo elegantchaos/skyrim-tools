@@ -39,16 +39,24 @@ struct ALSARInfo: Codable, Equatable {
     fitted: ARMACompact?,
     options: ARMAOptions? = nil
   ) {
+    let def = ARMAOptions.default
+
     self.mode = mode
     self.priority = priority
     self.loose = loose
     self.fitted = fitted
-    self.options = options
+    self.skirt = options?.skirt == def.skirt ? nil : !def.skirt
+    self.panty = options?.panty == def.panty ? nil : !def.panty
+    self.greaves = options?.greaves == def.greaves ? nil : !def.greaves
+    self.bra = options?.bra == def.bra ? nil : !def.bra
   }
 
   let mode: ARMOMode
   let priority: Int
   let loose: ARMACompact?
   let fitted: ARMACompact?
-  var options: ARMAOptions?
+  let skirt: Bool?
+  let panty: Bool?
+  let bra: Bool?
+  let greaves: Bool?
 }

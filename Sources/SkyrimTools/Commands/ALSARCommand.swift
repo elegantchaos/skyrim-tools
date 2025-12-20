@@ -600,4 +600,5 @@ struct ARMAOptions: Codable, Equatable {
 
   static let none = ARMAOptions(skirt: false, panty: false, bra: false, greaves: false)
   static let all = ARMAOptions(skirt: true, panty: true, bra: true, greaves: true)
+  static let `default` = ARMAOptions(skirt: true, panty: true, bra: false, greaves: true)
 }
