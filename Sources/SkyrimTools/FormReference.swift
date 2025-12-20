@@ -43,6 +43,15 @@ struct FormReference: Codable, Equatable {
     self.description = description
   }
 
+  /// Initialize a reference from a compact ARMA representation.
+  init(_ arma: ARMACompact) {
+    self.formID = String(format: "0x%X", arma.formID).cleanHex
+    self.editorID = arma.editorID
+    self.mod = "zzAlsarOutfitMod.esp"
+    self.name = nil
+    self.description = nil
+  }
+
   /// Initialize a reference by parsing a `formID~mod` string.
   /// - Parameters:
   ///   - string: The form record string to parse, eg `0x800~FlowerGirlsDESPID.esp`.

@@ -18,7 +18,6 @@ struct AlsarCommand: LoggableCommand {
 
   @Flag() var verbose: Bool = false
   @Flag() var pull: Bool = false
-  @Option(help: "Path to a the alsar.json config file.") var configPath: String?
   @Option(help: "Path to the ini files.") var iniPath: String?
   @Option(
     help:
@@ -26,11 +25,6 @@ struct AlsarCommand: LoggableCommand {
   var modelPath: String?
 
   mutating func run() throws {
-    guard let configURL = configPath?.relativeURL else {
-      log("No config path provided; skipping.")
-      return
-    }
-
     guard let iniURL = iniPath?.relativeURL else {
       log("No ini path provided; skipping.")
       return
@@ -43,35 +37,31 @@ struct AlsarCommand: LoggableCommand {
     let model = try ModelManager(dataURL: modelURL)
 
     if pull {
-      try pullSettings(configURL: configURL, iniURL: iniURL, model: model)
+      try pullSettings(iniURL: iniURL, model: model)
     } else {
-      try generateSettings(configURL: configURL, iniURL: iniURL)
+      try generateSettings(iniURL: iniURL, model: model)
     }
     log("Done.")
   }
 
   /// Generate ALSAR settings from a config file.
-  func generateSettings(configURL: URL, iniURL: URL) throws {
+  func generateSettings(iniURL: URL, model: ModelManager) throws {
     log("Generating ALSAR settings...")
 
-    let decoder = JSONDecoder()
-    let configFileURL = configURL.appendingPathExtension("config.json")
-    let config = try decoder.decode(
-      ARMOConfig.self, from: try Data(contentsOf: configFileURL))
+    let armors =
+      model.armors
+      .values
+      .filter { ($0.alsar != nil) && ($0.id.idModReference != nil) }
+      .sorted { String.idModReferencesAreIncreasing($0.id.idModReference!, $1.id.idModReference!) }
 
-    let sourceFileURL = configURL.appendingPathExtension("source.json")
-    let source = try decoder.decode(
-      ARMOSource.self, from: try Data(contentsOf: sourceFileURL))
+    try writeARMOSettings(armors: armors, iniURL: iniURL)
 
-    let armoEntries = sortedARMOEntries(config: config, source: source)
-    try writeARMOSettings(entries: armoEntries, iniURL: iniURL)
-
-    let armaEntries = sortedARMAEntries(config: config, source: source)
-    try writeARMASettings(entries: armaEntries, iniURL: iniURL)
+    // let armaEntries = sortedARMAEntries(armors: armors)
+    // try writeARMASettings(entries: armaEntries, iniURL: iniURL)
   }
 
   /// Extract initial settings from the ALSAR ini files and write out a config file.
-  func pullSettings(configURL: URL, iniURL: URL, model: ModelManager) throws {
+  func pullSettings(iniURL: URL, model: ModelManager) throws {
     log("Extracting ALSAR settings...")
     var armos = try extractARMOData(iniURL: iniURL)
     let armas = try extractARMAData(iniURL: iniURL)
@@ -101,40 +91,25 @@ struct AlsarCommand: LoggableCommand {
       armos[name] = armo
     }
 
-    for (_, pair) in armas {
-      pair.options = nil
-    }
-
-    let config = ARMOConfig(
-      modes: modes,
-      options: settings,
-    )
-
-    let source = ARMOSource(armour: armos, mapping: armas)
-
-    for (name, armour) in source.armour {
-      var updated = model.armor(name, default: { makeArmorRecord(name: name, for: armour) })
-      var keywords = updated.keywords ?? Set<Keyword>()
-      keywords.insert(.alsar)
-      if let keyword = armour.category?.alsarKeyword {
-        keywords.insert(keyword)
-      }
-      updated.keywords = keywords
-
-      if let arma = source.mapping[armour.arma], let mode = config.modes[name],
-        let options = config.options[armour.arma]
+    for (name, alsarArmor) in armos {
+      var armor = model.armor(name, default: { makeArmorRecord(name: name, for: alsarArmor) })
+      let keywords = armor.keywords ?? Set<Keyword>()
+      armor.keywords = keywords.union(alsarArmor.category?.alsarKeywords ?? [])
+      let armaName = alsarArmor.arma
+      if let alsarArma = armas[armaName],
+        let mode = modes[name],
+        let options = settings[armaName]
       {
         let alsarInfo = ALSARInfo(
           mode: mode,
-          priority: arma.priority,
-          loose: arma.loose,
-          fitted: arma.fitted,
+          arma: armaName,
+          pair: alsarArma,
           options: options
         )
-        updated.alsar = alsarInfo
+        armor.alsar = alsarInfo
       }
 
-      model.updateArmor(name, updated)
+      model.updateArmor(name, armor)
     }
 
     let encoder = JSONEncoder()
@@ -160,19 +135,6 @@ struct AlsarCommand: LoggableCommand {
       mod: mod
     )
     return ArmorRecord(id: ref)
-  }
-
-  /// Get sorted list of enabled armour entries.
-  func sortedARMOEntries(config: ARMOConfig, source: ARMOSource) -> [(String, ARMOMode, ARMOEntry)]
-  {
-    return config.modes.compactMap { name, mode in
-      if let armour = source.armour[name] {
-        return (name, mode, armour)
-      } else {
-        log("Warning: No ARMA mapping found for armour piece \(name) in config modes.")
-        return nil
-      }
-    }.sorted { $0.2.formID < $1.2.formID }
   }
 
   typealias SortedARMAEntry = (String, ARMAOptions, ARMAEntry, String, String)
@@ -224,15 +186,31 @@ struct AlsarCommand: LoggableCommand {
   }
 
   /// Write out the ARMO settings file.
-  func writeARMOSettings(entries: [(String, ARMOMode, ARMOEntry)], iniURL: URL) throws {
+  func writeARMOSettings(armors: [ArmorRecord], iniURL: URL) throws {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
 
-    for (name, mode, armour) in entries {
-      if mode == .off {
-        armo += "# "
+    for armor in armors {
+      if let alsar = armor.alsar,
+        let formID = armor.id.formID.flatMap({ Int($0, radix: 16) }),
+        let name = armor.id.idModReference
+      {
+        let mode = alsar.mode
+        if mode == .off {
+          armo += "# "
+        }
+
+        let hexForm = String(format: "%08X", formID)
+        let dlc =
+          switch armor.id.mod.lowercased() {
+          case "dawnguard.esm":
+            1
+          case "dragonborn.esm":
+            3
+          default:
+            0
+          }
+        armo += "\(hexForm)\t\(mode.configChar)\t\(dlc)\t\(alsar.arma)\t\(name)\n"
       }
-      let hexForm = String(format: "%08X", armour.formID)
-      armo += "\(hexForm)\t\(mode.configChar)\t\(armour.dlc)\t\(armour.arma)\t\(name)\n"
     }
 
     let armoURL = iniURL.appending(path: "zzLSARSetting_ARMO.ini")
@@ -470,16 +448,16 @@ enum ARMACategory: String, Codable {
   case heavy
   case other
 
-  var alsarKeyword: Keyword? {
+  var alsarKeywords: [Keyword] {
     switch self {
     case .cloth:
-      return .clothing
+      return [.alsar, .clothing]
     case .light:
-      return .lightArmor
+      return [.alsar, .armor, .light]
     case .heavy:
-      return .heavyArmor
+      return [.alsar, .armor, .heavy]
     default:
-      return nil
+      return []
     }
   }
   static func fromCode(_ code: String) -> Self {

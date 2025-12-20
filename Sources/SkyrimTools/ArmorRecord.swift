@@ -27,24 +27,25 @@ struct ArmorRecord: Codable, Equatable {
 enum Keyword: String, Codable {
   case alsar
   case clothing
-  case lightArmor
-  case heavyArmor
+  case armor
+  case light
+  case heavy
 }
 
 struct ALSARInfo: Codable, Equatable {
   internal init(
     mode: ARMOMode,
-    priority: Int,
-    loose: ARMACompact?,
-    fitted: ARMACompact?,
+    arma: String,
+    pair: ARMAPair,
     options: ARMAOptions? = nil
   ) {
     let def = ARMAOptions.default
 
     self.mode = mode
-    self.priority = priority
-    self.loose = loose
-    self.fitted = fitted
+    self.priority = pair.priority
+    self.arma = arma
+    self.loose = pair.loose.map { FormReference($0) }
+    self.fitted = pair.fitted.map { FormReference($0) }
     self.skirt = options?.skirt == def.skirt ? nil : !def.skirt
     self.panty = options?.panty == def.panty ? nil : !def.panty
     self.greaves = options?.greaves == def.greaves ? nil : !def.greaves
@@ -53,8 +54,9 @@ struct ALSARInfo: Codable, Equatable {
 
   let mode: ARMOMode
   let priority: Int
-  let loose: ARMACompact?
-  let fitted: ARMACompact?
+  let arma: String
+  let loose: FormReference?
+  let fitted: FormReference?
   let skirt: Bool?
   let panty: Bool?
   let bra: Bool?
