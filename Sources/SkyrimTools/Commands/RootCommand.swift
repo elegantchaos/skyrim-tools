@@ -24,7 +24,8 @@ struct RootCommand: AsyncParsableCommand {
         PullModsCommand.self,
         UnderwearCommand.self,
         SleepCommand.self,
-        ExtractCommand.self,
+        ExtractORFCommand.self,
+        ExtractOutfitsCommand.self,
       ]
     )
   }

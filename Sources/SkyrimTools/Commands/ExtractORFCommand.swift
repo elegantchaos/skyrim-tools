@@ -1,4 +1,9 @@
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+//  Created by Sam Deane on 20/12/25.
+//  All code (c) 2025 - present day, Elegant Chaos Limited.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 //  Created by Sam Deane on 18/12/2025.
 //  All code (c) 2025 - present day, Elegant Chaos Limited.
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -11,10 +16,10 @@ import Foundation
 /// This command scans a directory for files matching the pattern `*_DISTR.ini`
 /// and parses outfit assignment lines. Each outfit assignment maps NPC names
 /// to specific outfit form records, with the results written to JSON.
-struct ExtractCommand: LoggableCommand {
+struct ExtractORFCommand: LoggableCommand {
   static var configuration: CommandConfiguration {
     CommandConfiguration(
-      commandName: "extract",
+      commandName: "extract-orf",
       abstract: "Extract outfit assignments from distribution INI files."
     )
   }

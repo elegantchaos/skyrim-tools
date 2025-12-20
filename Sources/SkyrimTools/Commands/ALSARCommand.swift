@@ -20,6 +20,10 @@ struct AlsarCommand: LoggableCommand {
   @Flag() var pull: Bool = false
   @Option(help: "Path to a the alsar.json config file.") var configPath: String?
   @Option(help: "Path to the ini files.") var iniPath: String?
+  @Option(
+    help:
+      "Path to the model data folder containing Mods, Outfits, People, and Armors subdirectories.")
+  var modelPath: String?
 
   mutating func run() throws {
     guard let configURL = configPath?.relativeURL else {
@@ -32,8 +36,14 @@ struct AlsarCommand: LoggableCommand {
       return
     }
 
+    guard let modelURL = modelPath?.relativeURL else {
+      print("No model path specified.")
+      return
+    }
+    let model = try ModelManager(dataURL: modelURL)
+
     if pull {
-      try pullSettings(configURL: configURL, iniURL: iniURL)
+      try pullSettings(configURL: configURL, iniURL: iniURL, model: model)
     } else {
       try generateSettings(configURL: configURL, iniURL: iniURL)
     }
@@ -61,7 +71,7 @@ struct AlsarCommand: LoggableCommand {
   }
 
   /// Extract initial settings from the ALSAR ini files and write out a config file.
-  func pullSettings(configURL: URL, iniURL: URL) throws {
+  func pullSettings(configURL: URL, iniURL: URL, model: ModelManager) throws {
     log("Extracting ALSAR settings...")
     var armos = try extractARMOData(iniURL: iniURL)
     let armas = try extractARMAData(iniURL: iniURL)
@@ -102,11 +112,54 @@ struct AlsarCommand: LoggableCommand {
 
     let source = ARMOSource(armour: armos, mapping: armas)
 
+    for (name, armour) in source.armour {
+      var updated = model.armor(name, default: { makeArmorRecord(name: name, for: armour) })
+      var keywords = updated.keywords ?? Set<Keyword>()
+      keywords.insert(.alsar)
+      if let keyword = armour.category?.alsarKeyword {
+        keywords.insert(keyword)
+      }
+      updated.keywords = keywords
+
+      if let arma = source.mapping[armour.arma], let mode = config.modes[name],
+        let options = config.options[armour.arma]
+      {
+        let alsarInfo = ALSARInfo(
+          mode: mode,
+          priority: arma.priority,
+          loose: arma.loose,
+          fitted: arma.fitted,
+          options: options
+        )
+        updated.alsar = alsarInfo
+      }
+
+      model.updateArmor(name, updated)
+    }
+
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    try encoder.encode(config).write(to: configURL.appendingPathExtension("config.json"))
-    try encoder.encode(source).write(to: configURL.appendingPathExtension("source.json"))
-    log("Wrote ALSAR config and source to \(configURL.path)")
+    // try encoder.encode(config).write(to: configURL.appendingPathExtension("config.json"))
+    // try encoder.encode(source).write(to: configURL.appendingPathExtension("source.json"))
+    // log("Wrote ALSAR config and source to \(configURL.path)")
+
+    try model.save()
+  }
+
+  func makeArmorRecord(name: String, for armor: ARMOEntry) -> ArmorRecord {
+    let id = String(format: "0x%08X", armor.formID).cleanHex
+    let mod =
+      switch armor.dlc {
+      case 1: "dawnguard.esm"
+      case 3: "dragonborn.esm"
+      default: "skyrim.esm"
+      }
+    let ref = FormReference(
+      formID: id,
+      editorID: name,
+      mod: mod
+    )
+    return ArmorRecord(id: ref)
   }
 
   /// Get sorted list of enabled armour entries.
@@ -417,6 +470,18 @@ enum ARMACategory: String, Codable {
   case heavy
   case other
 
+  var alsarKeyword: Keyword? {
+    switch self {
+    case .cloth:
+      return .clothing
+    case .light:
+      return .lightArmor
+    case .heavy:
+      return .heavyArmor
+    default:
+      return nil
+    }
+  }
   static func fromCode(_ code: String) -> Self {
     switch code {
     case "C":
@@ -514,13 +579,13 @@ struct ARMAEntry: Codable {
 }
 
 /// Compact representation of an ARMA record.
-struct ARMACompact: Codable {
+struct ARMACompact: Codable, Equatable {
   let formID: Int
   let editorID: String
 }
 
 /// Options for an ARMA record.
-struct ARMAOptions: Codable {
+struct ARMAOptions: Codable, Equatable {
   let skirt: Bool
   let panty: Bool
   let bra: Bool
