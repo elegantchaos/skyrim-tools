@@ -50,9 +50,8 @@ struct AlsarCommand: LoggableCommand {
 
     let armors =
       model.armors
-      .values
-      .filter { ($0.alsar != nil) && ($0.id.idModReference != nil) }
-      .sorted { String.idModReferencesAreIncreasing($0.id.idModReference!, $1.id.idModReference!) }
+      .filter { ($0.value.alsar != nil) && ($0.value.id.formID != nil) }
+      .sorted { $0.value.id.formID! < $1.value.id.formID! }
 
     try writeARMOSettings(armors: armors, iniURL: iniURL)
 
@@ -122,7 +121,6 @@ struct AlsarCommand: LoggableCommand {
   }
 
   func makeArmorRecord(name: String, for armor: ARMOEntry) -> ArmorRecord {
-    let id = String(format: "0x%08X", armor.formID).cleanHex
     let mod =
       switch armor.dlc {
       case 1: "dawnguard.esm"
@@ -130,7 +128,7 @@ struct AlsarCommand: LoggableCommand {
       default: "skyrim.esm"
       }
     let ref = FormReference(
-      formID: id,
+      intFormID: armor.formID,
       editorID: name,
       mod: mod
     )
@@ -186,14 +184,12 @@ struct AlsarCommand: LoggableCommand {
   }
 
   /// Write out the ARMO settings file.
-  func writeARMOSettings(armors: [ArmorRecord], iniURL: URL) throws {
+  func writeARMOSettings(armors: [(String, ArmorRecord)], iniURL: URL) throws {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
 
-    for armor in armors {
-      if let alsar = armor.alsar,
-        let formID = armor.id.formID.flatMap({ Int($0, radix: 16) }),
-        let name = armor.id.idModReference
-      {
+    for (name, armor) in armors {
+      if let formID = armor.id.intFormID {
+        let alsar = armor.alsar!
         let mode = alsar.mode
         if mode == .off {
           armo += "# "
@@ -291,7 +287,7 @@ struct AlsarCommand: LoggableCommand {
         let name = String(fields[4])
         if name != "ARMO_NAME" {  // skip header
           let entry = ARMOEntry(
-            formID: Int(fields[0], radix: 16) ?? 0,
+            formID: UInt(fields[0], radix: 16) ?? 0,
             mode: ARMOMode.fromCode(String(fields[1])),
             dlc: Int(fields[2]) ?? 0,
             arma: String(fields[3]),
@@ -426,7 +422,7 @@ struct ARMOSource: Codable {
 /// Entry for an armour piece, taken from the zzLSARSetting_ARMO.ini file.
 class ARMOEntry: Codable {
   internal init(
-    formID: Int, mode: ARMOMode, dlc: Int, arma: String
+    formID: UInt, mode: ARMOMode, dlc: Int, arma: String
   ) {
     self.formID = formID
     self.mode = mode
@@ -434,7 +430,7 @@ class ARMOEntry: Codable {
     self.arma = arma
   }
 
-  let formID: Int
+  let formID: UInt
   let mode: ARMOMode?
   let dlc: Int
   let arma: String

@@ -33,10 +33,12 @@ struct FormReference: Codable, Equatable {
 
   /// Initialize a reference with explicit values.
   init(
-    formID: String? = nil, editorID: String? = nil, mod: String, name: String? = nil,
+    formID: String? = nil, intFormID: UInt? = nil, editorID: String? = nil, mod: String,
+    name: String? = nil,
     description: String? = nil
   ) {
-    self.formID = formID?.cleanHex
+    let id = formID ?? intFormID.map { String(format: "0x%X", $0) }
+    self.formID = id?.cleanHex
     self.editorID = editorID
     self.mod = mod
     self.name = name
@@ -140,6 +142,12 @@ struct FormReference: Codable, Equatable {
     formID.map { "\($0)|\(mod)" }
   }
 
+  /// The formID as an integer, if available.
+  var intFormID: UInt? {
+    guard let formID else { return nil }
+    let hexBody = formID.hasPrefix("0x") ? String(formID.dropFirst(2)) : formID
+    return UInt(hexBody, radix: 16)
+  }
 }
 
 extension String {

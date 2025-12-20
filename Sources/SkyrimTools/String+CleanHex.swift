@@ -9,8 +9,9 @@ extension String {
   /// Normalize a hex string by trimming whitespace, removing any `0x` prefix, and uppercasing.
   var cleanHex: String {
     let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-    let lowercased = trimmed.lowercased()
-    let body = lowercased.hasPrefix("0x") ? String(lowercased.dropFirst(2)) : lowercased
-    return "0x" + body.uppercased()
+    let uppercased = trimmed.uppercased()
+    let body = uppercased.hasPrefix("0X") ? String(uppercased.dropFirst(2)) : uppercased
+    let uint = UInt(body, radix: 16)
+    return "0x" + (uint.map { String(format: "%X", $0) } ?? body)
   }
 }
