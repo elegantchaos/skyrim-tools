@@ -137,6 +137,16 @@ struct FormReference: Codable, Equatable {
     return nil
   }
 
+  /// Mod ID for use in calculating the full formID
+  /// from the local formID, for DLC esm files.
+  var modID: UInt {
+    switch mod.lowercased() {
+    case "dawnguard.esm": return 0x0100_0000
+    case "dragonborn.esm": return 0x0200_0000
+    default: return 0
+    }
+  }
+
   /// Name for use in a sleep set file.
   var sleepReference: String? {
     formID.map { "\($0)|\(mod)" }
@@ -148,6 +158,13 @@ struct FormReference: Codable, Equatable {
     let hexBody = formID.hasPrefix("0x") ? String(formID.dropFirst(2)) : formID
     return UInt(hexBody, radix: 16)
   }
+
+  /// The full formID including mod offset, if available.
+  var fullIntFormID: UInt? {
+    guard let intFormID else { return nil }
+    return intFormID + modID
+  }
+
 }
 
 extension String {
