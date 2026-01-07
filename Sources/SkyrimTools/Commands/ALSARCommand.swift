@@ -85,6 +85,7 @@ struct AlsarCommand: LoggableCommand {
         armo.category = pair.category
       } else {
         log("Warning: No ARMA found for \(armo.arma) referenced by ARMO \(name)")
+        settings[armo.arma] = .default
       }
 
       armos[name] = armo
@@ -95,10 +96,9 @@ struct AlsarCommand: LoggableCommand {
       let keywords = armor.keywords ?? Set<Keyword>()
       armor.keywords = keywords.union(alsarArmor.category?.alsarKeywords ?? [])
       let armaName = alsarArmor.arma
-      if let alsarArma = armas[armaName],
-        let mode = modes[name],
+      if let mode = modes[name] {
+        let alsarArma = armas[armaName]
         let options = settings[armaName]
-      {
         let alsarInfo = ALSARInfo(
           mode: mode,
           arma: armaName,
@@ -288,7 +288,7 @@ struct AlsarCommand: LoggableCommand {
         }
         if name != "ARMO_NAME" {  // skip header
           let entry = ARMOEntry(
-            formID: UInt(id, radix: 16) ?? 0,
+            formID: (UInt(id, radix: 16) ?? 0) & 0x00FF_FFFF,
             mode: ARMOMode.fromCode(mode),
             dlc: Int(fields[2]) ?? 0,
             arma: String(fields[3]),
@@ -454,7 +454,7 @@ enum ARMACategory: String, Codable {
     case .heavy:
       return [.alsar, .armor, .heavy]
     default:
-      return []
+      return [.alsar]
     }
   }
   static func fromCode(_ code: String) -> Self {

@@ -36,16 +36,16 @@ struct ALSARInfo: Codable, Equatable {
   internal init(
     mode: ARMOMode,
     arma: String,
-    pair: ARMAPair,
+    pair: ARMAPair?,
     options: ARMAOptions? = nil
   ) {
     let def = ARMAOptions.default
 
     self.mode = mode
-    self.priority = pair.priority
+    self.priority = pair?.priority
     self.arma = arma
-    self.loose = pair.loose.map { FormReference($0) }
-    self.fitted = pair.fitted.map { FormReference($0) }
+    self.loose = pair?.loose.map { FormReference($0) }
+    self.fitted = pair?.fitted.map { FormReference($0) }
     self.skirt = options?.skirt == def.skirt ? nil : !def.skirt
     self.panty = options?.panty == def.panty ? nil : !def.panty
     self.greaves = options?.greaves == def.greaves ? nil : !def.greaves
@@ -53,7 +53,7 @@ struct ALSARInfo: Codable, Equatable {
   }
 
   let mode: ARMOMode
-  let priority: Int
+  let priority: Int?
   let arma: String
   let loose: FormReference?
   let fitted: FormReference?
