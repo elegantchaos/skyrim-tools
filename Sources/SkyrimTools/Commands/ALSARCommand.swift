@@ -51,7 +51,7 @@ struct AlsarCommand: LoggableCommand {
     let armors =
       model.armors
       .filter { ($0.value.alsar != nil) && ($0.value.id.formID != nil) }
-      .sorted { $0.value.id.formID! < $1.value.id.formID! }
+      .sorted { $0.value.id.fullIntFormID! < $1.value.id.fullIntFormID! }
 
     try writeARMOSettings(armors: armors, iniURL: iniURL)
 
@@ -188,7 +188,7 @@ struct AlsarCommand: LoggableCommand {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
 
     for (name, armor) in armors {
-      if let formID = armor.id.intFormID {
+      if let formID = armor.id.fullIntFormID {
         let alsar = armor.alsar!
         let mode = alsar.mode
         if mode == .off {
@@ -196,15 +196,7 @@ struct AlsarCommand: LoggableCommand {
         }
 
         let hexForm = String(format: "%08X", formID)
-        let dlc =
-          switch armor.id.mod.lowercased() {
-          case "dawnguard.esm":
-            1
-          case "dragonborn.esm":
-            3
-          default:
-            0
-          }
+        let dlc = armor.id.alsarDLCCode
         armo += "\(hexForm)\t\(mode.configChar)\t\(dlc)\t\(alsar.arma)\t\(name)\n"
       }
     }
@@ -285,10 +277,19 @@ struct AlsarCommand: LoggableCommand {
       let fields = line.split(separator: "\t")
       if fields.count >= 5 {
         let name = String(fields[4])
+        var id = fields[0]
+        var mode = String(fields[1])
+        if id.hasPrefix("#") {
+          id = id.dropFirst()
+          while id.hasPrefix(" ") {
+            id = id.dropFirst()
+          }
+          mode = "O"  // off
+        }
         if name != "ARMO_NAME" {  // skip header
           let entry = ARMOEntry(
-            formID: UInt(fields[0], radix: 16) ?? 0,
-            mode: ARMOMode.fromCode(String(fields[1])),
+            formID: UInt(id, radix: 16) ?? 0,
+            mode: ARMOMode.fromCode(mode),
             dlc: Int(fields[2]) ?? 0,
             arma: String(fields[3]),
           )
@@ -575,4 +576,14 @@ struct ARMAOptions: Codable, Equatable {
   static let none = ARMAOptions(skirt: false, panty: false, bra: false, greaves: false)
   static let all = ARMAOptions(skirt: true, panty: true, bra: true, greaves: true)
   static let `default` = ARMAOptions(skirt: true, panty: true, bra: false, greaves: true)
+}
+
+extension FormReference {
+  var alsarDLCCode: Int {
+    switch mod.lowercased() {
+    case "dawnguard.esm": return 1
+    case "dragonborn.esm": return 3
+    default: return 0
+    }
+  }
 }
