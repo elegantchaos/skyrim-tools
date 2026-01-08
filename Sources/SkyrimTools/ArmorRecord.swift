@@ -61,4 +61,24 @@ struct ALSARInfo: Codable, Equatable {
   let panty: Bool?
   let bra: Bool?
   let greaves: Bool?
+
+  var skirtInt: Int {
+    let value = skirt ?? ARMAOptions.default.skirt
+    return value ? 1 : 0
+  }
+
+  var pantyInt: Int {
+    let value = panty ?? ARMAOptions.default.panty
+    return value ? 1 : 0
+  }
+
+  var braInt: Int {
+    let value = bra ?? ARMAOptions.default.bra
+    return value ? 1 : 0
+  }
+
+  var greavesInt: Int {
+    let value = greaves ?? ARMAOptions.default.greaves
+    return value ? 1 : 0
+  }
 }

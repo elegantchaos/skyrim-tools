@@ -159,6 +159,14 @@ struct FormReference: Codable, Equatable {
     return UInt(hexBody, radix: 16)
   }
 
+  /// The formID as an 8-character uppercase hex string, if available.
+  /// Pads with leading zeros if necessary.
+  /// Doesn't include the `0x` prefix.
+  var rawFormID8: String? {
+    guard let intFormID else { return nil }
+    return String(format: "%08X", intFormID)
+  }
+
   /// The full formID including mod offset, if available.
   var fullIntFormID: UInt? {
     guard let intFormID else { return nil }

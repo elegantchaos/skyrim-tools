@@ -54,9 +54,7 @@ struct AlsarCommand: LoggableCommand {
       .sorted { $0.value.id.fullIntFormID! < $1.value.id.fullIntFormID! }
 
     try writeARMOSettings(armors: armors, iniURL: iniURL)
-
-    // let armaEntries = sortedARMAEntries(armors: armors)
-    // try writeARMASettings(entries: armaEntries, iniURL: iniURL)
+    try writeARMASettings(armors: armors, iniURL: iniURL)
   }
 
   /// Extract initial settings from the ALSAR ini files and write out a config file.
@@ -135,54 +133,6 @@ struct AlsarCommand: LoggableCommand {
     return ArmorRecord(id: ref)
   }
 
-  typealias SortedARMAEntry = (String, ARMAOptions, ARMAEntry, String, String)
-
-  /// Sorted list of ARMA entries for all armour pieces.
-  /// Entries are sorted by mode (L before W) then by ARMA name.
-  /// (this is approximately the order in the original ALSAR ini file)
-  func sortedARMAEntries(config: ARMOConfig, source: ARMOSource) -> [SortedARMAEntry] {
-    var entries: [SortedARMAEntry] = []
-
-    for (name, pair) in source.mapping {
-      let category = pair.category
-      let options =
-        config.options[name]
-        ?? ((category == .other)
-          ? ARMAOptions(skirt: false, panty: false, bra: false, greaves: true) : .all)
-
-      if let loose = pair.loose {
-        let looseEntry = ARMAEntry(
-          category: category,
-          formID: loose.formID,
-          options: options,
-          priority: pair.priority,
-          dlc: pair.dlc,
-          editorID: loose.editorID
-        )
-        entries.append((name, options, looseEntry, "L", name))
-      }
-
-      if let fitted = pair.fitted {
-        let fittedEntry = ARMAEntry(
-          category: category,
-          formID: fitted.formID,
-          options: options,
-          priority: pair.priority,
-          dlc: pair.dlc,
-          editorID: fitted.editorID
-        )
-        entries.append((name, options, fittedEntry, "W", name))
-      }
-
-    }
-
-    return entries.sorted { (e1: SortedARMAEntry, e2: SortedARMAEntry) in
-      let m1 = e1.3
-      let m2 = e2.3
-      return (m1 == m2) ? (e1.0 < e2.0) : (m1 < m2)
-    }
-  }
-
   /// Write out the ARMO settings file.
   func writeARMOSettings(armors: [(String, ArmorRecord)], iniURL: URL) throws {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
@@ -206,7 +156,7 @@ struct AlsarCommand: LoggableCommand {
   }
 
   /// Write out the ARMA settings file.
-  func writeARMASettings(entries: [SortedARMAEntry], iniURL: URL) throws {
+  func writeARMASettings(armors: [(String, ArmorRecord)], iniURL: URL) throws {
     var arma = """
       #ARMA_CONFIG										
       # NAME and WorL: key of ARMA ( like "L" + "ArchmageRobesAA" )										
@@ -221,10 +171,10 @@ struct AlsarCommand: LoggableCommand {
 
       """
 
-    arma += try filteredARMAChunk(entries: entries, filter: .cloth, filterName: "CLOTH")
-    arma += try filteredARMAChunk(entries: entries, filter: .light, filterName: "LIGHT_ARMOR")
-    arma += try filteredARMAChunk(entries: entries, filter: .heavy, filterName: "HEAVY_ARMOR")
-    arma += try filteredARMAChunk(entries: entries, filter: .other, filterName: "HELMET")
+    arma += try filteredARMAChunk(armors: armors, filter: .clothing, filterName: "CLOTH")
+    arma += try filteredARMAChunk(armors: armors, filter: .light, filterName: "LIGHT_ARMOR")
+    arma += try filteredARMAChunk(armors: armors, filter: .heavy, filterName: "HEAVY_ARMOR")
+    // arma += try filteredARMAChunk(armors: armors, filter: .other, filterName: "HELMET")
 
     arma += "# END OF LINE\n"
 
@@ -234,33 +184,55 @@ struct AlsarCommand: LoggableCommand {
 
   /// Get a chunk of ARMA entries filtered by category.
   func filteredARMAChunk(
-    entries: [SortedARMAEntry], filter: ARMACategory, filterName: String
+    armors: [(String, ArmorRecord)], filter: Keyword, filterName: String
   ) throws -> String {
-    var arma = ""
     var done = Set<String>()
 
-    arma +=
-      "#DO_NOT_EDIT_THIS_LINE:\(filterName)-----------------------------------------------\t\t\t\t\t\t\t\t\t\t\n"
-
-    for (name, options, entry, mode, _) in entries {
-      let variant = "\(mode)\(name)"
+    var lines: [(String, String)] = []
+    for (_, armor) in armors {
+      guard let alsar = armor.alsar else { continue }
+      let variant = "\(alsar.mode)\(alsar.arma)"
       if !done.contains(variant) {
         done.insert(variant)
-        if entry.category == filter {
-          arma += "\(name)\t"
-          arma += "\(String(format: "%08X", entry.formID))\t"
-          arma += "\(entry.category.letterCode)\t"
-          arma += "\(mode)\t"
-          arma += options.skirt ? "1\t" : "0\t"
-          arma += options.panty ? "1\t" : "0\t"
-          arma += options.bra ? "1\t" : "0\t"
-          arma += options.greaves ? "1\t" : "0\t"
-          arma += "\(entry.priority)\t"
-          arma += "\(entry.dlc)\t"
-          arma += "\(entry.editorID)\n"
+        if let keywords = armor.keywords, keywords.contains(filter) {
+          let category = ARMACategory.fromKeyword(filter)
+          var entries: [(String, FormReference)] = []
+          if let loose = alsar.loose {
+            entries.append(("L", loose))
+          }
+          if let fitted = alsar.fitted {
+            entries.append(("W", fitted))
+          }
+
+          for (code, entry) in entries {
+            if let id = entry.rawFormID8, let editorID = entry.editorID {
+              var line = "\(alsar.arma)\t"
+              line += "\(id)\t"
+              line += "\(category.letterCode)\t"
+              line += "\(code)\t"
+              line += "\(alsar.skirtInt)\t"
+              line += "\(alsar.pantyInt)\t"
+              line += "\(alsar.braInt)\t"
+              line += "\(alsar.greavesInt)\t"
+              line += "\(alsar.priority ?? 0)\t"
+              line += "\(armor.id.alsarDLCCode)\t"
+              line += "\(editorID)\n"
+              let sortKey = "\(code)-\(alsar.arma)"
+              lines.append((sortKey, line))
+            }
+          }
         }
       }
     }
+
+    var arma =
+      "#DO_NOT_EDIT_THIS_LINE:\(filterName)-----------------------------------------------\t\t\t\t\t\t\t\t\t\t\n"
+
+    arma +=
+      lines
+      .sorted { $0.0 < $1.0 }
+      .map { $0.1 }
+      .joined()
 
     return arma
   }
@@ -457,6 +429,20 @@ enum ARMACategory: String, Codable {
       return [.alsar]
     }
   }
+
+  static func fromKeyword(_ keyword: Keyword) -> Self {
+    switch keyword {
+    case .clothing:
+      return .cloth
+    case .light:
+      return .light
+    case .heavy:
+      return .heavy
+    default:
+      return .other
+    }
+  }
+
   static func fromCode(_ code: String) -> Self {
     switch code {
     case "C":
