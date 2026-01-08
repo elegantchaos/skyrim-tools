@@ -100,6 +100,7 @@ struct ExtractORFCommand: LoggableCommand {
             var keywords = record.keywords ?? Set<Keyword>()
             if let keyword {
               keywords.insert(keyword)
+              keywords.insert(.orf)
               record.keywords = keywords
               manager.updateArmor(editorID: editorID, record)
             }
