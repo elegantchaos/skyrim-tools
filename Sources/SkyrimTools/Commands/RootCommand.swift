@@ -13,7 +13,7 @@ import Foundation
 struct RootCommand: AsyncParsableCommand {
   static var configuration: CommandConfiguration {
     CommandConfiguration(
-      commandName: "json-merge",
+      commandName: "skyrim-tools",
       abstract: "Assorted tools for merging configuration files.",
       subcommands: [
         AlsarCommand.self,

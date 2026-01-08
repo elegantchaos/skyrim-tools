@@ -117,8 +117,8 @@ struct ExtractOutfitsCommand: LoggableCommand {
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
 
-      if let outfit, let outfitKey = outfit.spidReference {
-        let modName = URL(fileURLWithPath: outfit.mod).deletingPathExtension().lastPathComponent
+      if let outfit, let outfitKey = outfit.spidReference, let outfitMod = outfit.mod {
+        let modName = URL(fileURLWithPath: outfitMod).deletingPathExtension().lastPathComponent
         _ = manager.mod(modName, default: { ModRecord() })
 
         for name in names {

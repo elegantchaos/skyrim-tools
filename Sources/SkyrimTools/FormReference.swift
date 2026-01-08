@@ -17,9 +17,9 @@ struct FormReference: Codable, Equatable {
   let editorID: String?
 
   /// The mod filename including extension, eg `FlowerGirlsDESPID.esp`.
-  let mod: String
+  let mod: String?
 
-  /// Optional human-readable name from a preceding comment, if present.
+  /// Optional human-readable name as it appears in the game.
   let name: String?
 
   /// Optional full description extracted from any preceding comments.
@@ -33,7 +33,7 @@ struct FormReference: Codable, Equatable {
 
   /// Initialize a reference with explicit values.
   init(
-    formID: String? = nil, intFormID: UInt? = nil, editorID: String? = nil, mod: String,
+    formID: String? = nil, intFormID: UInt? = nil, editorID: String? = nil, mod: String? = nil,
     name: String? = nil,
     description: String? = nil
   ) {
@@ -116,6 +116,7 @@ struct FormReference: Codable, Equatable {
 
   /// Derived plugin type from the filename extension.
   var modType: ModType {
+    guard let mod else { return .esp }
     let ext = URL(fileURLWithPath: mod).pathExtension.lowercased()
     return ModType(rawValue: ext) ?? .esp
   }
@@ -133,6 +134,7 @@ struct FormReference: Codable, Equatable {
 
   /// Combined formID and mod with a ~.
   var idModReference: String? {
+    guard let mod else { return nil }
     if let formID { return "\(formID)~\(mod)" }
     return nil
   }
@@ -140,7 +142,7 @@ struct FormReference: Codable, Equatable {
   /// Mod ID for use in calculating the full formID
   /// from the local formID, for DLC esm files.
   var modID: UInt {
-    switch mod.lowercased() {
+    switch mod?.lowercased() {
     case "dawnguard.esm": return 0x0100_0000
     case "dragonborn.esm": return 0x0200_0000
     default: return 0
@@ -149,7 +151,8 @@ struct FormReference: Codable, Equatable {
 
   /// Name for use in a sleep set file.
   var sleepReference: String? {
-    formID.map { "\($0)|\(mod)" }
+    guard let mod else { return nil }
+    return formID.map { "\($0)|\(mod)" }
   }
 
   /// The formID as an integer, if available.

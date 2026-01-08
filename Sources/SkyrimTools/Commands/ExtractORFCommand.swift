@@ -43,24 +43,22 @@ struct ExtractORFCommand: LoggableCommand {
       return
     }
 
+    log("Scanning for ORF configuration files in \(inputPath)...")
+
     let inputURL = URL(fileURLWithPath: inputPath, relativeTo: cwd)
     let modelURL = URL(fileURLWithPath: modelPath, relativeTo: cwd)
     let fm = FileManager.default
 
     let manager = try ModelManager(dataURL: modelURL)
-
-    guard let enumerator = fm.enumerator(at: inputURL, includingPropertiesForKeys: nil) else {
-      print("Couldn't enumerate files at \(inputURL.path)")
-      return
-    }
-
     let parser = IniParser()
-    for case let fileURL as URL in enumerator {
-      let filename = fileURL.lastPathComponent.trimmingCharacters(in: .whitespaces)
-      guard filename.lowercased().hasSuffix("_distr.ini") else { continue }
+    for fileURL in try fm.contentsOfDirectory(
+      at: inputURL, includingPropertiesForKeys: nil)
+    {
+      let filename = fileURL.lastPathComponent
+      guard filename.lowercased().hasSuffix(" orf_kid.ini") else { continue }
       log("Parsing \(fileURL.lastPathComponent)")
       let entries = try parser.parse(url: fileURL)
-      process(entries: entries, manager: manager, source: fileURL.lastPathComponent)
+      process(entries: entries, manager: manager, source: filename)
     }
 
     try manager.save()
@@ -76,77 +74,99 @@ struct ExtractORFCommand: LoggableCommand {
   private func process(
     entries: [IniEntry], manager: ModelManager, source: String
   ) {
-    for entry in entries.filter({ $0.matchesKey("Outfit") }) {
-      let payload = entry.value
-      let assignment = payload.split(separator: "|").map {
-        $0.trimmingCharacters(in: .whitespaces)
-      }
-      switch assignment.count {
-      case 2:
-        break
+    for entry in entries.filter({ $0.matchesKey("Keyword") }) {
+      let values = entry.value
+        .split(separator: "|")
+        .map {
+          $0.trimmingCharacters(in: .whitespaces)
+        }
 
-      case 7:
-        let keywordsPart = assignment[1] == "NONE" ? assignment[2] : assignment[1]
-        log("Ignoring extended outfit assignment for \(keywordsPart)", path: [source])
-        continue
+      switch values.count {
+      case 3:
+        let kind = values[1]
+        if kind == "Armor" {
+          let keyword = keyword(forORFKeyword: values[0])
+          let armors = values[2]
+            .split(separator: ",")
+            .map {
+              $0.trimmingCharacters(in: .whitespaces)
+            }
+
+          for armor in armors {
+            let editorID = armor.trimmingCharacters(in: .whitespaces)
+            var record = manager.armor(
+              editorID: editorID,
+              default: { key in newArmorRecord(key: key, editorID: editorID) })
+            var keywords = record.keywords ?? Set<Keyword>()
+            if let keyword {
+              keywords.insert(keyword)
+              record.keywords = keywords
+              manager.updateArmor(editorID: editorID, record)
+            }
+          }
+        }
 
       default:
-        log("Skipping malformed outfit assignment \(payload)", path: [source])
-        continue
-      }
-
-      let formPart = assignment[0]
-      let namesPart = assignment[1]
-
-      var outfit: FormReference?
-      do {
-        let defaultOutfit = try FormReference(parse: String(formPart), comment: entry.comment)
-        if let outfitKey = defaultOutfit.spidReference {
-          let found = manager.outfit(outfitKey, default: { defaultOutfit })
-          if found != defaultOutfit {
-            log("Overwriting existing outfit \(found) with \(defaultOutfit)", path: [source])
-            manager.updateOutfit(outfitKey, defaultOutfit)
-            outfit = defaultOutfit
-          } else {
-            outfit = found
-          }
-        }
-      } catch {
-        log("Skipping malformed form \(formPart): \(error)", path: [source])
-        continue
-      }
-
-      let names =
-        namesPart
-        .split(separator: ",")
-        .map { $0.trimmingCharacters(in: .whitespaces) }
-        .filter { !$0.isEmpty }
-
-      if let outfit, let outfitKey = outfit.spidReference {
-        let modName = URL(fileURLWithPath: outfit.mod).deletingPathExtension().lastPathComponent
-        _ = manager.mod(modName, default: { ModRecord() })
-
-        for name in names {
-          var person = manager.person(
-            name, default: { PersonRecord(outfit: outfitKey, outfitSource: source) })
-
-          if let existingOutfit = person.outfit, existingOutfit != outfitKey {
-            log(
-              "Overwriting existing entry \"\(person.outfit ?? "")\" with \"\(outfitKey)\" for \(name)",
-              path: [source]
-            )
-            if let existingSource = person.outfitSource {
-              var collisions = person.outfitCollisions.map { Set($0) } ?? []
-              collisions.insert(.init(outfit: existingOutfit, source: existingSource))
-              person.outfitCollisions = Array(collisions)
-            }
-            person.outfit = outfitKey
-            person.outfitSource = source
-            manager.updatePerson(name, person)
-          }
-        }
+        log("Skipping malformed outfit assignment \(entry.value)", path: [source])
       }
     }
   }
 
+  func newArmorRecord(key: String, editorID: String) -> ArmorRecord {
+    if verbose {
+      log("Creating new armor record \(editorID)")
+    }
+    let reference = FormReference(editorID: editorID)
+    return ArmorRecord(id: reference)
+  }
+
+  func keyword(forORFKeyword orfKeyword: String) -> Keyword? {
+    guard let mapped = Self.orfKeywords[orfKeyword] else {
+      log("Unknown ORF keyword: \(orfKeyword)")
+      return nil
+    }
+
+    return mapped
+  }
+
+  static let orfKeywords: [String: Keyword] = [
+    // No corresponding ORF keywords for these:
+    // "ORF_Heavy": .heavy,
+    // "ORF_Light": .light,
+    // "ORF_Clothing": .clothing,
+    // "ORF_Mask": .mask,
+
+    "ORF_Black": .black,
+    "ORF_Blue": .blue,
+    "ORF_Bra": .bra,
+    "ORF_Brown": .brown,
+    "ORF_Classy": .classy,
+    "ORF_Cleavage": .cleavage,
+    "ORF_Colourful": .colourful,
+    "ORF_Dress": .dress,
+    "ORF_Flimsy": .flimsy,
+    "ORF_Gold": .gold,
+    "ORF_Green": .green,
+    "ORF_Grey": .grey,
+    "ORF_Hooded": .hooded,
+    "ORF_Intimidating": .intimidating,
+    "ORF_Leather": .leather,
+    "ORF_NearlyNaked": .nearlyNaked,
+    "ORF_OutOfPlace": .outOfPlace,
+    "ORF_Pink": .pink,
+    "ORF_Purple": .purple,
+    "ORF_Red": .red,
+    "ORF_Revealing": .revealing,
+    "ORF_Robes": .robes,
+    "ORF_Scruffy": .scruffy,
+    "ORF_ShortSkirt": .short,
+    "ORF_Silver": .silver,
+    "ORF_Sturdy": .sturdy,
+    "ORF_Tight": .tight,
+    "ORF_Underwear": .underwear,
+    "ORF_White": .white,
+    "ORF_Yellow": .yellow,
+    "ORF_Transparent": .transparent,
+    "ORF_Inappropriate": .inappropriate,
+  ]
 }

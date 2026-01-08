@@ -43,7 +43,7 @@ struct UnderwearCommand: LoggableCommand {
       manager.armors.values.compactMap { armor in
         guard armor.useAsUnderwear == true else { return nil }
         guard let ref = armor.id.idModReference else {
-          log("Skipping armour missing formID", path: [armor.id.mod])
+          log("Skipping armour missing formID", path: [armor.id.mod ?? "unknown"])
           return nil
         }
         return ref

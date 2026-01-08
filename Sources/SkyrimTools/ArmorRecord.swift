@@ -24,15 +24,6 @@ struct ArmorRecord: Codable, Equatable {
   }
 }
 
-enum Keyword: String, Codable {
-  case alsar
-  case clothing
-  case armor
-  case light
-  case heavy
-  case mask
-}
-
 struct ALSARInfo: Codable, Equatable {
   internal init(
     mode: ARMOMode,

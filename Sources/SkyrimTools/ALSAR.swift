@@ -192,7 +192,7 @@ struct ARMAOptions: Codable, Equatable {
 
 extension FormReference {
   var alsarDLCCode: Int {
-    switch mod.lowercased() {
+    switch mod?.lowercased() {
     case "dawnguard.esm": return 1
     case "dragonborn.esm": return 3
     default: return 0

@@ -29,6 +29,8 @@ class ModelManager {
   private var modifiedPeople: Set<String> = []
   private var modifiedArmors: Set<String> = []
 
+  private(set) var editorIDToNameMap: [String: String] = [:]
+
   private let decoder = JSONDecoder()
   private let encoder: JSONEncoder
 
@@ -57,6 +59,16 @@ class ModelManager {
     try fm.createDirectory(at: sleepSetsURL, withIntermediateDirectories: true)
 
     try loadIndexes()
+
+    for (name, armor) in armors {
+      if let editorID = armor.id.editorID {
+        if let existing = editorIDToNameMap[editorID], existing != name {
+          print(
+            "Warning: Duplicate editorID \(editorID) with differing names: \(existing) vs \(name)")
+        }
+        editorIDToNameMap[editorID] = name
+      }
+    }
   }
 
   /// Load indexes from disk.
@@ -196,6 +208,11 @@ class ModelManager {
     armors[key]
   }
 
+  func armor(editorID: String) -> ArmorRecord? {
+    guard let name = editorIDToNameMap[editorID] else { return nil }
+    return armor(name)
+  }
+
   /// Retrieve an armor record, creating one with the supplied factory if missing.
   /// - Parameters:
   ///   - key: The armor name (filename without extension).
@@ -205,6 +222,25 @@ class ModelManager {
     if let record = armors[key] { return record }
     let record = factory()
     armors[key] = record
+    modifiedArmors.insert(key)
+    return record
+  }
+
+  /// Retrieve an armor record, creating one with the supplied factory if missing.
+  /// - Parameters:
+  ///   - editorID: The armor editorID.
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created armor record.
+  func armor(editorID: String, default factory: (String) -> ArmorRecord) -> ArmorRecord {
+    if let record = armor(editorID: editorID) { return record }
+    let key =
+      editorID
+      .replacingOccurrences(of: "_", with: " ")
+      .trimmingCharacters(in: .whitespaces)
+
+    let record = factory(key)
+    armors[key] = record
+    editorIDToNameMap[editorID] = key
     modifiedArmors.insert(key)
     return record
   }
@@ -219,6 +255,17 @@ class ModelManager {
     if armors[key] != newValue {
       armors[key] = newValue
       modifiedArmors.insert(key)
+    }
+  }
+
+  func updateArmor(editorID: String, _ newValue: ArmorRecord) {
+    if let key = editorIDToNameMap[editorID] {
+      if armors[key] != newValue {
+        armors[key] = newValue
+        modifiedArmors.insert(key)
+      }
+    } else {
+      print("Warning: Attempted to update armor with unknown editorID \(editorID)")
     }
   }
 
