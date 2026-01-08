@@ -30,6 +30,7 @@ enum Keyword: String, Codable {
   case armor
   case light
   case heavy
+  case mask
 }
 
 struct ALSARInfo: Codable, Equatable {
@@ -44,6 +45,7 @@ struct ALSARInfo: Codable, Equatable {
     self.mode = mode
     self.priority = pair?.priority
     self.arma = arma
+    self.alias = nil
     self.loose = pair?.loose.map { FormReference($0) }
     self.fitted = pair?.fitted.map { FormReference($0) }
     self.skirt = options?.skirt == def.skirt ? nil : !def.skirt
@@ -55,6 +57,7 @@ struct ALSARInfo: Codable, Equatable {
   let mode: ARMOMode
   let priority: Int?
   let arma: String
+  let alias: String?
   let loose: FormReference?
   let fitted: FormReference?
   let skirt: Bool?

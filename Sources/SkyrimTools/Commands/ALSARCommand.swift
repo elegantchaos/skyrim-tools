@@ -109,12 +109,6 @@ struct AlsarCommand: LoggableCommand {
       model.updateArmor(name, armor)
     }
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    // try encoder.encode(config).write(to: configURL.appendingPathExtension("config.json"))
-    // try encoder.encode(source).write(to: configURL.appendingPathExtension("source.json"))
-    // log("Wrote ALSAR config and source to \(configURL.path)")
-
     try model.save()
   }
 
@@ -138,8 +132,7 @@ struct AlsarCommand: LoggableCommand {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
 
     for (name, armor) in armors {
-      if let formID = armor.id.fullIntFormID {
-        let alsar = armor.alsar!
+      if let alsar = armor.alsar, let formID = armor.id.fullIntFormID {
         let mode = alsar.mode
         if mode == .off {
           armo += "# "
@@ -174,7 +167,7 @@ struct AlsarCommand: LoggableCommand {
     arma += try filteredARMAChunk(armors: armors, filter: .clothing, filterName: "CLOTH")
     arma += try filteredARMAChunk(armors: armors, filter: .light, filterName: "LIGHT_ARMOR")
     arma += try filteredARMAChunk(armors: armors, filter: .heavy, filterName: "HEAVY_ARMOR")
-    // arma += try filteredARMAChunk(armors: armors, filter: .other, filterName: "HELMET")
+    arma += try filteredARMAChunk(armors: armors, filter: .mask, filterName: "HELMET")
 
     arma += "# END OF LINE\n"
 
@@ -205,8 +198,9 @@ struct AlsarCommand: LoggableCommand {
           }
 
           for (code, entry) in entries {
+            let name = alsar.alias ?? alsar.arma
             if let id = entry.rawFormID8, let editorID = entry.editorID {
-              var line = "\(alsar.arma)\t"
+              var line = "\(name)\t"
               line += "\(id)\t"
               line += "\(category.letterCode)\t"
               line += "\(code)\t"
@@ -426,7 +420,7 @@ enum ARMACategory: String, Codable {
     case .heavy:
       return [.alsar, .armor, .heavy]
     default:
-      return [.alsar]
+      return [.alsar, .mask]
     }
   }
 
