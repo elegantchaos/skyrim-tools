@@ -132,7 +132,7 @@ struct AlsarCommand: LoggableCommand {
     var armo = "ArmoFormID\tWorL\tDLC\tARMA_NAME\tARMO_NAME\n"
 
     for (name, armor) in armors {
-      if let alsar = armor.alsar, let formID = armor.id.fullIntFormID {
+      if let alsar = armor.alsar, alsar.skipARMO != true, let formID = armor.id.fullIntFormID {
         let mode = alsar.mode
         if mode == .off {
           armo += "# "
@@ -211,7 +211,7 @@ struct AlsarCommand: LoggableCommand {
               line += "\(alsar.priority ?? 0)\t"
               line += "\(armor.id.alsarDLCCode)\t"
               line += "\(editorID)\n"
-              let sortKey = "\(code)-\(alsar.arma)"
+              let sortKey = "\(code)-\(name)"
               lines.append((sortKey, line))
             }
           }

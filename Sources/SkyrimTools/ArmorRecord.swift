@@ -52,6 +52,7 @@ struct ALSARInfo: Codable, Equatable {
     self.panty = options?.panty == def.panty ? nil : !def.panty
     self.greaves = options?.greaves == def.greaves ? nil : !def.greaves
     self.bra = options?.bra == def.bra ? nil : !def.bra
+    self.skipARMO = nil
   }
 
   let mode: ARMOMode
@@ -64,6 +65,7 @@ struct ALSARInfo: Codable, Equatable {
   let panty: Bool?
   let bra: Bool?
   let greaves: Bool?
+  let skipARMO: Bool?
 
   var skirtInt: Int {
     let value = skirt ?? ARMAOptions.default.skirt
