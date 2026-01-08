@@ -45,8 +45,8 @@ struct FormReference: Codable, Equatable {
     self.description = description
   }
 
-  /// Initialize a reference from a compact ARMA representation.
-  init(_ arma: ARMACompact) {
+  /// Initialize a reference from an ARMA entry.
+  init(_ arma: ARMAEntry) {
     self.formID = String(format: "0x%X", arma.formID).cleanHex
     self.editorID = arma.editorID
     self.mod = "zzAlsarOutfitMod.esp"

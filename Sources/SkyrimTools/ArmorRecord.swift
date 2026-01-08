@@ -40,7 +40,7 @@ struct ALSARInfo: Codable, Equatable {
     pair: ARMAPair?,
     options: ARMAOptions? = nil
   ) {
-    let def = ARMAOptions.default
+    let defaults = ARMAOptions.default
 
     self.mode = mode
     self.priority = pair?.priority
@@ -48,10 +48,10 @@ struct ALSARInfo: Codable, Equatable {
     self.alias = nil
     self.loose = pair?.loose.map { FormReference($0) }
     self.fitted = pair?.fitted.map { FormReference($0) }
-    self.skirt = options?.skirt == def.skirt ? nil : !def.skirt
-    self.panty = options?.panty == def.panty ? nil : !def.panty
-    self.greaves = options?.greaves == def.greaves ? nil : !def.greaves
-    self.bra = options?.bra == def.bra ? nil : !def.bra
+    self.skirt = options?.skirt == defaults.skirt ? nil : !defaults.skirt
+    self.panty = options?.panty == defaults.panty ? nil : !defaults.panty
+    self.greaves = options?.greaves == defaults.greaves ? nil : !defaults.greaves
+    self.bra = options?.bra == defaults.bra ? nil : !defaults.bra
     self.skipARMO = nil
   }
 
@@ -67,23 +67,12 @@ struct ALSARInfo: Codable, Equatable {
   let greaves: Bool?
   let skipARMO: Bool?
 
-  var skirtInt: Int {
-    let value = skirt ?? ARMAOptions.default.skirt
-    return value ? 1 : 0
-  }
-
-  var pantyInt: Int {
-    let value = panty ?? ARMAOptions.default.panty
-    return value ? 1 : 0
-  }
-
-  var braInt: Int {
-    let value = bra ?? ARMAOptions.default.bra
-    return value ? 1 : 0
-  }
-
-  var greavesInt: Int {
-    let value = greaves ?? ARMAOptions.default.greaves
-    return value ? 1 : 0
+  var options: ARMAOptions {
+    ARMAOptions(
+      skirt: skirt,
+      panty: panty,
+      bra: bra,
+      greaves: greaves
+    )
   }
 }
