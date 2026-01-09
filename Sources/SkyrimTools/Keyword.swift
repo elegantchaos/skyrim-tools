@@ -7,42 +7,48 @@ import Foundation
 
 enum Keyword: String, Codable {
   case alsar
-  case armor
+  case orf
+
   case black
   case blue
-  case bra
   case brown
-  case classy
-  case cleavage
-  case clothing
-  case colourful
-  case dress
-  case flimsy
   case gold
   case green
   case grey
-  case heavy
-  case hooded
-  case intimidating
-  case leather
-  case light
-  case mask
-  case nearlyNaked
-  case outOfPlace
   case pink
   case purple
   case red
-  case revealing
-  case robes
-  case scruffy
-  case short
   case silver
-  case sturdy
-  case tight
-  case underwear
   case white
   case yellow
-  case transparent
+
+  case heavy
+  case light
+
+  case anachronistic
+  case classy
+  case cleavage
+  case colourful
+  case crossover
+  case flimsy
   case inappropriate
-  case orf
+  case indecent
+  case intimidating
+  case leather
+  case revealing
+  case short
+  case scruffy
+  case sturdy
+  case tight
+  case transparent
+
+  case armor
+  case bra
+  case dress
+  case clothing
+  case hooded
+  case mask
+  case robes
+  case underwear
+
 }

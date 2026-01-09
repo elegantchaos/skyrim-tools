@@ -152,8 +152,8 @@ struct ExtractORFCommand: LoggableCommand {
     "ORF_Hooded": .hooded,
     "ORF_Intimidating": .intimidating,
     "ORF_Leather": .leather,
-    "ORF_NearlyNaked": .nearlyNaked,
-    "ORF_OutOfPlace": .outOfPlace,
+    "ORF_NearlyNaked": .indecent,
+    "ORF_OutOfPlace": .anachronistic,
     "ORF_Pink": .pink,
     "ORF_Purple": .purple,
     "ORF_Red": .red,
@@ -169,5 +169,6 @@ struct ExtractORFCommand: LoggableCommand {
     "ORF_Yellow": .yellow,
     "ORF_Transparent": .transparent,
     "ORF_Inappropriate": .inappropriate,
+    "ORF_FromOtherGame": .crossover,
   ]
 }
