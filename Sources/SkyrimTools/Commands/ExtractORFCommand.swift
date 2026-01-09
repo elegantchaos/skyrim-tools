@@ -49,19 +49,19 @@ struct ExtractORFCommand: LoggableCommand {
     let modelURL = URL(fileURLWithPath: modelPath, relativeTo: cwd)
     let fm = FileManager.default
 
-    let manager = try ModelManager(dataURL: modelURL)
+    let model = try ModelManager(dataURL: modelURL)
     let parser = IniParser()
     for fileURL in try fm.contentsOfDirectory(
       at: inputURL, includingPropertiesForKeys: nil)
     {
       let filename = fileURL.lastPathComponent
-      guard filename.lowercased().hasSuffix(" orf_kid.ini") else { continue }
+      guard filename.hasSuffix("_KID.ini") && filename.contains("ORF") else { continue }
       log("Parsing \(fileURL.lastPathComponent)")
       let entries = try parser.parse(url: fileURL)
-      process(entries: entries, manager: manager, source: filename)
+      process(entries: entries, model: model, source: filename)
     }
 
-    try manager.save()
+    try model.save()
     log("Model saved to \(modelURL.path)")
   }
 
@@ -72,7 +72,7 @@ struct ExtractORFCommand: LoggableCommand {
   ///   - manager: The model manager for storing records.
   ///   - source: The name of the source file for logging purposes.
   private func process(
-    entries: [IniEntry], manager: ModelManager, source: String
+    entries: [IniEntry], model: ModelManager, source: String
   ) {
     for entry in entries.filter({ $0.matchesKey("Keyword") }) {
       let values = entry.value
@@ -86,15 +86,11 @@ struct ExtractORFCommand: LoggableCommand {
         let kind = values[1]
         if kind == "Armor" {
           let keyword = keyword(forORFKeyword: values[0])
-          let armors = values[2]
-            .split(separator: ",")
-            .map {
-              $0.trimmingCharacters(in: .whitespaces)
-            }
+          let armors = matchArmors(values[2], model: model)
 
           for armor in armors {
             let editorID = armor.trimmingCharacters(in: .whitespaces)
-            var record = manager.armor(
+            var record = model.armor(
               editorID: editorID,
               default: { key in newArmorRecord(key: key, editorID: editorID) })
             var keywords = record.keywords ?? Set<Keyword>()
@@ -102,7 +98,7 @@ struct ExtractORFCommand: LoggableCommand {
               keywords.insert(keyword)
               keywords.insert(.orf)
               record.keywords = keywords
-              manager.updateArmor(editorID: editorID, record)
+              model.updateArmor(editorID: editorID, record)
             }
           }
         }
@@ -111,6 +107,46 @@ struct ExtractORFCommand: LoggableCommand {
         log("Skipping malformed outfit assignment \(entry.value)", path: [source])
       }
     }
+  }
+
+  func matchArmors(_ armors: String, model: ModelManager) -> [String] {
+    let rawItems =
+      armors
+      .split(separator: ",")
+      .map {
+        $0.trimmingCharacters(in: .whitespaces)
+      }
+
+    var items: [String] = []
+    for item in rawItems {
+      let isWildcard = item.contains("*")
+      if isWildcard {
+        let pattern = item.replacingOccurrences(of: "*", with: ".*")
+        do {
+          let expression = try Regex<Substring>("^\(pattern)$")
+          for (armor, _) in model.editorIDToKeyMap {
+            if try expression.firstMatch(in: armor) != nil {
+              items.append(armor)
+              log("Wildcard \(item) matches armor \(armor)")
+            }
+          }
+          // for (armor, name) in model.editorIDToNameMap {
+          //   if try expression.firstMatch(in: armor) != nil {
+          //     log("Wildcard \(item) matches armor \(armor)")
+          //   } else if pattern.contains("Daedric") && armor.contains("Daedric") {
+          //     log("Wildcard \(item) does not match armor \(armor) - \(name)")
+          //   }
+          // }
+        } catch {
+          log("Invalid wildcard pattern: \(pattern): \(error)")
+        }
+
+      } else {
+        items.append(item)
+      }
+    }
+
+    return items
   }
 
   func newArmorRecord(key: String, editorID: String) -> ArmorRecord {

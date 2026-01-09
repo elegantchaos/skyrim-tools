@@ -29,6 +29,7 @@ class ModelManager {
   private var modifiedPeople: Set<String> = []
   private var modifiedArmors: Set<String> = []
 
+  private(set) var editorIDToKeyMap: [String: String] = [:]
   private(set) var editorIDToNameMap: [String: String] = [:]
 
   private let decoder = JSONDecoder()
@@ -62,13 +63,22 @@ class ModelManager {
 
     for (name, armor) in armors {
       if let editorID = armor.id.editorID {
-        if let existing = editorIDToNameMap[editorID], existing != name {
+        if let existing = editorIDToKeyMap[editorID], existing != name {
           print(
             "Warning: Duplicate editorID \(editorID) with differing names: \(existing) vs \(name)")
         }
-        editorIDToNameMap[editorID] = name
+        editorIDToKeyMap[editorID] = name
       }
+
+      if let existing = armor.id.name, existing != name {
+        print(
+          "Warning: Armor \(name) has differing stored name: \(existing)")
+      }
+      editorIDToNameMap[armor.id.editorID ?? name] = name
     }
+
+    // print(editorIDToKeyMap.keys)
+    // print(editorIDToNameMap.keys)
   }
 
   /// Load indexes from disk.
@@ -209,7 +219,7 @@ class ModelManager {
   }
 
   func armor(editorID: String) -> ArmorRecord? {
-    guard let name = editorIDToNameMap[editorID] else { return nil }
+    guard let name = editorIDToKeyMap[editorID] else { return nil }
     return armor(name)
   }
 
@@ -240,7 +250,7 @@ class ModelManager {
 
     let record = factory(key)
     armors[key] = record
-    editorIDToNameMap[editorID] = key
+    editorIDToKeyMap[editorID] = key
     modifiedArmors.insert(key)
     return record
   }
@@ -259,7 +269,7 @@ class ModelManager {
   }
 
   func updateArmor(editorID: String, _ newValue: ArmorRecord) {
-    if let key = editorIDToNameMap[editorID] {
+    if let key = editorIDToKeyMap[editorID] {
       if armors[key] != newValue {
         armors[key] = newValue
         modifiedArmors.insert(key)
