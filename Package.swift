@@ -26,6 +26,7 @@ let package = Package(
     .package(url: "https://github.com/elegantchaos/Matchable.git", from: "1.0.0"),
     .package(url: "https://github.com/elegantchaos/Versionator.git", from: "2.1.0"),
     .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "0.2.1"),
+    .package(url: "https://github.com/elegantchaos/SwiftESP.git", branch: "skyrim-tools"),
   ],
 
   targets: [
@@ -37,6 +38,7 @@ let package = Package(
       name: "SkyrimTools",
       dependencies: [
         "DictionaryMerger",
+        "SwiftESP",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ],
       plugins: [

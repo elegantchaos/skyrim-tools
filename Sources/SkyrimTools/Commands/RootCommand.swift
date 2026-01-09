@@ -17,15 +17,16 @@ struct RootCommand: AsyncParsableCommand {
       abstract: "Assorted tools for merging configuration files.",
       subcommands: [
         AlsarCommand.self,
+        ExtractArmorCommand.self,
+        ExtractORFCommand.self,
+        ExtractOutfitsCommand.self,
         MergeCommand.self,
         ModsCommand.self,
         NPCSCommand.self,
         OverlayCommand.self,
         PullModsCommand.self,
-        UnderwearCommand.self,
         SleepCommand.self,
-        ExtractORFCommand.self,
-        ExtractOutfitsCommand.self,
+        UnderwearCommand.self,
       ]
     )
   }

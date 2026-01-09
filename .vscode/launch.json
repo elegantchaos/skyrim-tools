@@ -1,3 +1,24 @@
 {
-  "configurations": []
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:skyrim-tools}",
+      "name": "Debug skyrim-tools",
+      "target": "skyrim-tools",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug skyrim-tools"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:skyrim-tools}",
+      "name": "Release skyrim-tools",
+      "target": "skyrim-tools",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release skyrim-tools"
+    }
+  ]
 }
