@@ -9,7 +9,6 @@ import Foundation
 ///
 /// This class handles the persistence of mod-related data across multiple record types,
 /// maintaining in-memory indexes that can be queried and modified, then written back to disk.
-@Observable
 class ModelManager {
   let dataURL: URL
   let modsURL: URL
