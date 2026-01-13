@@ -26,6 +26,7 @@ struct RootCommand: AsyncParsableCommand {
         SleepCommand.self,
         ExtractORFCommand.self,
         ExtractOutfitsCommand.self,
+        VortexCommand.self,
       ]
     )
   }
