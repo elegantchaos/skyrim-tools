@@ -176,6 +176,17 @@ struct FormReference: Codable, Equatable {
     return intFormID + modID
   }
 
+  static func isIncreasing(_ r1: FormReference, _ r2: FormReference) -> Bool {
+    let m1 = r1.mod ?? ""
+    let m2 = r2.mod ?? ""
+    if m1 != m2 {
+      return m1 < m2
+    }
+
+    let f1 = r1.intFormID ?? 0
+    let f2 = r2.intFormID ?? 0
+    return f1 < f2
+  }
 }
 
 extension String {
