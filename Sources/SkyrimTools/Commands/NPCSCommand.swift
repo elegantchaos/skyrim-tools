@@ -24,12 +24,16 @@ struct NPCSCommand: ParsableCommand {
     let npcsURL =
       npcsPath.map { URL(fileURLWithPath: $0, relativeTo: cwd) }
 
-    if let npcURL = npcsURL {
-      let decoder = JSONDecoder()
-      let data = try Data(contentsOf: npcURL)
-      let npcCollection = try decoder.decode([String: NPCRecord].self, from: data)
-      process(npcs: npcCollection)
+    guard let npcURL = npcsURL else {
+      print(
+        "Error: No NPCs file provided. Use --npcs-path to specify the path to the NPCs JSON file.")
+      return
     }
+
+    let decoder = JSONDecoder()
+    let data = try Data(contentsOf: npcURL)
+    let npcCollection = try decoder.decode([String: NPCRecord].self, from: data)
+    process(npcs: npcCollection)
 
     func process(npcs: [String: NPCRecord]) {
       var obodyIds: [String] = []
