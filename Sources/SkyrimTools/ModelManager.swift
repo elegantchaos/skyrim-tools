@@ -351,10 +351,25 @@ class ModelManager {
     modifiedAlsars.removeAll()
   }
 
+  func tempSaveAll() {
+    do {
+      try saveIndex(armors, to: armorsURL, modified: modifiedArmors, forceAll: true)
+      try saveIndex(alsars, to: alsarsURL, modified: modifiedAlsars, forceAll: true)
+    } catch {
+      print("Warning: Failed to save all records during tempSaveAll: \(error)")
+    }
+  }
+
   /// Save modified records to a directory.
   private func saveIndex<T: Encodable>(
-    _ index: [String: T], to url: URL, modified: Set<String>
+    _ index: [String: T], to url: URL, modified modIn: Set<String>, forceAll: Bool = false
   ) throws {
+    var modified = modIn
+    if forceAll {
+      for key in index.keys {
+        modified.insert(key)
+      }
+    }
     for key in modified {
       guard let record = index[key] else { continue }
       let base = key.keyEscapingSlashes

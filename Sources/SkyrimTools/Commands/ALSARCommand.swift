@@ -49,7 +49,7 @@ struct AlsarCommand: LoggableCommand {
     try writeARMOSettings(armors: armors, iniURL: iniURL, model: model)
     try writeARMASettings(armors: armors, iniURL: iniURL, model: model)
 
-    try model.save()
+    // try model.tempSaveAll()
   }
 
   /// Write out the ARMO settings file.
