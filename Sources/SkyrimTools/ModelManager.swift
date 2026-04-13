@@ -15,6 +15,7 @@ class ModelManager {
   let outfitsURL: URL
   let peopleURL: URL
   let armorsURL: URL
+  let alsarsURL: URL
   let sleepSetsURL: URL
 
   private(set) var mods: [String: ModRecord] = [:]
@@ -22,11 +23,13 @@ class ModelManager {
   private(set) var people: [String: PersonRecord] = [:]
   private(set) var armors: [String: ArmorRecord] = [:]
   private(set) var sleepSets: [String: SleepSet] = [:]
+  private(set) var alsars: [String: ALSARRecord] = [:]
 
   private var modifiedMods: Set<String> = []
   private var modifiedOutfits: Set<String> = []
   private var modifiedPeople: Set<String> = []
   private var modifiedArmors: Set<String> = []
+  private var modifiedAlsars: Set<String> = []
 
   private(set) var editorIDToKeyMap: [String: String] = [:]
   private(set) var editorIDToNameMap: [String: String] = [:]
@@ -45,6 +48,7 @@ class ModelManager {
     self.outfitsURL = dataURL.appending(path: "Outfits")
     self.peopleURL = dataURL.appending(path: "People")
     self.armorsURL = dataURL.appending(path: "Armors")
+    self.alsarsURL = dataURL.appending(path: "Alsar")
     self.sleepSetsURL = dataURL.appending(path: "SleepSets")
 
     let encoder = JSONEncoder()
@@ -56,6 +60,7 @@ class ModelManager {
     try fm.createDirectory(at: outfitsURL, withIntermediateDirectories: true)
     try fm.createDirectory(at: peopleURL, withIntermediateDirectories: true)
     try fm.createDirectory(at: armorsURL, withIntermediateDirectories: true)
+    try fm.createDirectory(at: alsarsURL, withIntermediateDirectories: true)
     try fm.createDirectory(at: sleepSetsURL, withIntermediateDirectories: true)
 
     try loadIndexes()
@@ -86,6 +91,7 @@ class ModelManager {
     outfits = try loadIndex(from: outfitsURL, as: FormReference.self)
     people = try loadIndex(from: peopleURL, as: PersonRecord.self)
     armors = try loadIndex(from: armorsURL, as: ArmorRecord.self)
+    alsars = try loadIndex(from: alsarsURL, as: ALSARRecord.self)
     sleepSets = try loadIndex(from: sleepSetsURL, as: SleepSet.self)
   }
 
@@ -278,6 +284,39 @@ class ModelManager {
     }
   }
 
+  /// Retrieve an ALSAR record if it exists.
+  /// - Parameter key: The ALSAR name (filename without extension).
+  /// - Returns: The existing ALSAR record or `nil` if not present.
+  func alsar(_ key: String) -> ALSARRecord? {
+    alsars[key]
+  }
+
+  /// Retrieve an ALSAR record, creating one with the supplied factory if missing.
+  /// - Parameters:
+  ///   - key: The ALSAR name (filename without extension).
+  ///   - default: Factory closure returning a default record when one doesn't exist.
+  /// - Returns: The existing or newly created ALSAR record.
+  func alsar(_ key: String, default factory: () -> ALSARRecord) -> ALSARRecord {
+    if let record = alsars[key] { return record }
+    let record = factory()
+    alsars[key] = record
+    modifiedAlsars.insert(key)
+    return record
+  }
+
+  /// Update an ALSAR record with a new value.
+  /// Marks the record as modified only if it differs from the existing one.
+  ///
+  /// - Parameters:
+  ///   - key: The ALSAR name (filename without extension).
+  ///   - newValue: The new ALSAR record value.
+  func updateAlsar(_ key: String, _ newValue: ALSARRecord) {
+    if alsars[key] != newValue {
+      alsars[key] = newValue
+      modifiedAlsars.insert(key)
+    }
+  }
+
   /// Retrieve a sleep set template if it exists.
   /// - Parameter key: The sleep set name (filename without extension).
   /// - Returns: The existing template or `nil` if not present.
@@ -303,11 +342,13 @@ class ModelManager {
     try saveIndex(outfits, to: outfitsURL, modified: modifiedOutfits)
     try saveIndex(people, to: peopleURL, modified: modifiedPeople)
     try saveIndex(armors, to: armorsURL, modified: modifiedArmors)
+    try saveIndex(alsars, to: alsarsURL, modified: modifiedAlsars)
 
     modifiedMods.removeAll()
     modifiedOutfits.removeAll()
     modifiedPeople.removeAll()
     modifiedArmors.removeAll()
+    modifiedAlsars.removeAll()
   }
 
   /// Save modified records to a directory.

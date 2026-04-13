@@ -28,14 +28,23 @@ struct ALSARInfo: Codable, Equatable {
   internal init(
     mode: ARMOMode,
     arma: String,
+  ) {
+    self.mode = mode
+    self.arma = arma
+  }
+
+  let mode: ARMOMode
+  let arma: String
+}
+
+struct ALSARRecord: Codable, Equatable {
+  internal init(
     pair: ARMAPair?,
     options: ARMAOptions? = nil
   ) {
     let defaults = ARMAOptions.default
 
-    self.mode = mode
     self.priority = pair?.priority
-    self.arma = arma
     self.alias = nil
     self.loose = pair?.loose.map { FormReference($0) }
     self.fitted = pair?.fitted.map { FormReference($0) }
@@ -46,9 +55,7 @@ struct ALSARInfo: Codable, Equatable {
     self.skipARMO = nil
   }
 
-  let mode: ARMOMode
   let priority: Int?
-  let arma: String
   let alias: String?
   let loose: FormReference?
   let fitted: FormReference?
