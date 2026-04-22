@@ -33,9 +33,9 @@ struct BuildFomodCommand: LoggableCommand {
   /// Enable verbose logs.
   @Flag() var verbose: Bool = false
 
-  /// Path to mod JSON that defines content and archive names.
-  @Option(help: "Path to mod JSON (e.g. overrides.json).")
-  var modPath: String
+  /// Mod name or path (e.g. "overrides" or "overrides.json").
+  @Option(help: "Mod name or path (e.g. \"overrides\" or \"overrides.json\").")
+  var mod: String
 
   /// Build number used as the third component of the version.
   @Option(help: "Build number for info.xml version (major.minor.<build-number>).")
@@ -50,7 +50,7 @@ struct BuildFomodCommand: LoggableCommand {
   mutating func execute(emitSummary: Bool) throws {
     let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
-    let mod = try ModMetadata.load(from: modPath, cwd: cwd)
+    let mod = try ModMetadata.load(from: self.mod, cwd: cwd)
     let paths = try ModMetadata.derivePaths(settings: settings, configURL: configURL, mod: mod)
 
     let name = mod.name ?? mod.content

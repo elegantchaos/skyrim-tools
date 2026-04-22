@@ -45,6 +45,7 @@ struct DeployExtensionCommand: LoggableCommand {
 
   /// Run the deployment.
   mutating func run() async throws {
+    print("\nDeploying ScorpioPrivateArchiveHelper extension...")
     let fm = FileManager.default
     let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)

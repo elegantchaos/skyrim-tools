@@ -6,27 +6,30 @@
 import ArgumentParser
 import Foundation
 
-struct OverlayCommand: ParsableCommand {
+struct OverlayCommand: LoggableCommand {
   static var configuration: CommandConfiguration {
     CommandConfiguration(
       commandName: "overlay",
-      abstract: "Apply multiple overlays."
+      abstract: "Apply multiple overlays to the staging folder derived from mod metadata."
     )
   }
 
   @Flag() var verbose: Bool = false
-  @Option(help: "The output file for the merged JSON.") var output: String?
+  @Option(help: "Mod name or path (e.g. \"overrides\" or \"overrides.json\").") var mod: String
   @Option(help: "The overlays directory to apply.") var overlays: String?
 
   mutating func run() throws {
+    print("\nApplying overlays...")
     let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
+    let mod = try ModMetadata.load(from: self.mod, cwd: cwd)
+    let paths = try ModMetadata.derivePaths(settings: settings, configURL: configURL, mod: mod)
+
     let overlaysURL =
       overlays.map { URL(fileURLWithPath: $0, relativeTo: cwd) }
       ?? cwd.appending(path: "Overlays")
 
-    let outputURL =
-      output.map { URL(fileURLWithPath: $0, relativeTo: cwd) } ?? cwd.appending(path: "Output")
-
+    let outputURL = paths.stagingURL
     try? FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
 
     let overlays = try FileManager.default.contentsOfDirectory(

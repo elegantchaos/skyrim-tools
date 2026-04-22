@@ -79,16 +79,17 @@ struct PrepareReleaseCommand: LoggableCommand {
   /// Enable verbose logs.
   @Flag() var verbose: Bool = false
 
-  /// Path to mod JSON that defines content and archive names.
-  @Option(help: "Path to mod JSON (e.g. overrides.json).")
-  var modPath: String
+  /// Mod name or path (e.g. "overrides" or "overrides.json").
+  @Option(help: "Mod name or path (e.g. \"overrides\" or \"overrides.json\").")
+  var mod: String
 
   /// Run release preparation.
   mutating func run() async throws {
+    print("\nPreparing staging release...")
     let fm = FileManager.default
     let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
-    let mod = try ModMetadata.load(from: modPath, cwd: cwd)
+    let mod = try ModMetadata.load(from: self.mod, cwd: cwd)
     let paths = try ModMetadata.derivePaths(settings: settings, configURL: configURL, mod: mod)
 
     var isDirectory: ObjCBool = false
@@ -109,7 +110,7 @@ struct PrepareReleaseCommand: LoggableCommand {
     let statusOutput = try gitOutput(["status", "--porcelain"], in: paths.stagingURL)
     guard !statusOutput.isEmpty else {
       print("No staging changes detected; nothing to release.", to: &stderr)
-      return
+      throw ExitCode(2)
     }
 
     let commitCountString = try gitOutput(["rev-list", "--count", "HEAD"], in: paths.stagingURL)
@@ -138,7 +139,7 @@ struct PrepareReleaseCommand: LoggableCommand {
 
     var buildFomod = BuildFomodCommand()
     buildFomod.verbose = verbose
-    buildFomod.modPath = modPath
+    buildFomod.mod = self.mod
     buildFomod.buildNumber = buildNumber
     try buildFomod.execute(emitSummary: false)
 
@@ -149,7 +150,7 @@ struct PrepareReleaseCommand: LoggableCommand {
     guard stagedDiffStatus == 1 else {
       print(
         "No committable staging changes detected after git add; nothing to release.", to: &stderr)
-      return
+      throw ExitCode(2)
     }
 
     try git(["commit", "-m", "chore: automated staging update"], in: paths.stagingURL)
@@ -164,12 +165,12 @@ struct PrepareReleaseCommand: LoggableCommand {
 
     var buildArchive = BuildArchiveCommand()
     buildArchive.verbose = verbose
-    buildArchive.modPath = modPath
+    buildArchive.mod = self.mod
     try buildArchive.execute(paths: paths, emitSummary: false)
 
     var buildManifest = BuildManifestCommand()
     buildManifest.verbose = verbose
-    buildManifest.modPath = modPath
+    buildManifest.mod = self.mod
     buildManifest.buildNumber = buildNumber
     try buildManifest.execute(mod: mod, paths: paths, buildNumber: buildNumber, emitSummary: false)
 

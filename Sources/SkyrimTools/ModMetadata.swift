@@ -65,13 +65,22 @@ struct ModMetadata: Decodable {
     }
   }
 
-  /// Load mod metadata JSON from a path relative to the current working directory.
+  /// Load mod metadata JSON from a path or bare name relative to the current working directory.
+  ///
+  /// If the supplied string contains no path separator and does not end in `.json`, it is treated
+  /// as a bare name and resolved as `<name>.json` in the working directory.
   static func load(from modPath: String, cwd: URL) throws -> ModMetadata {
-    let modURL: URL
-    if modPath.hasPrefix("/") {
-      modURL = URL(fileURLWithPath: modPath)
+    let resolvedPath: String
+    if !modPath.contains("/") && !modPath.hasSuffix(".json") {
+      resolvedPath = modPath + ".json"
     } else {
-      modURL = cwd.appending(path: modPath)
+      resolvedPath = modPath
+    }
+    let modURL: URL
+    if resolvedPath.hasPrefix("/") {
+      modURL = URL(fileURLWithPath: resolvedPath)
+    } else {
+      modURL = cwd.appending(path: resolvedPath)
     }
 
     let data = try Data(contentsOf: modURL)
