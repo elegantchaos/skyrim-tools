@@ -16,9 +16,6 @@ import Testing
     let configURL = root.appending(path: "skyrim-tools.json")
     let outputURL = root.appending(path: "AutoInstall")
 
-    setenv("SKYRIM_TOOLS_FORCE_TEST_SANDBOX", "1", 1)
-    defer { unsetenv("SKYRIM_TOOLS_FORCE_TEST_SANDBOX") }
-
     let resolved = try SkyrimToolsSettings.resolveConfiguredPath(
       outputURL.path, relativeTo: configURL)
     #expect(resolved.standardizedFileURL == outputURL.standardizedFileURL)
@@ -27,9 +24,6 @@ import Testing
   @Test func resolveConfiguredPathRejectsLiveLookingPathsInTests() throws {
     let root = try makeTempDirectory()
     let configURL = root.appending(path: "skyrim-tools.json")
-
-    setenv("SKYRIM_TOOLS_FORCE_TEST_SANDBOX", "1", 1)
-    defer { unsetenv("SKYRIM_TOOLS_FORCE_TEST_SANDBOX") }
 
     #expect(throws: SkyrimToolsSettings.SettingsError.self) {
       try SkyrimToolsSettings.resolveConfiguredPath(

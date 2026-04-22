@@ -161,6 +161,18 @@ struct PrepareReleaseCommand: LoggableCommand {
     }
 
     try git(["tag", "-a", versionString, "-m", "Release \(versionString)"], in: paths.stagingURL)
+
+    var buildArchive = BuildArchiveCommand()
+    buildArchive.verbose = verbose
+    buildArchive.modPath = modPath
+    try buildArchive.execute(paths: paths, emitSummary: false)
+
+    var buildManifest = BuildManifestCommand()
+    buildManifest.verbose = verbose
+    buildManifest.modPath = modPath
+    buildManifest.buildNumber = buildNumber
+    try buildManifest.execute(mod: mod, paths: paths, buildNumber: buildNumber, emitSummary: false)
+
     print(versionString)
   }
 

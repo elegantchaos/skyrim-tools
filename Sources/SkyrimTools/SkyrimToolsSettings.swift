@@ -89,8 +89,12 @@ struct SkyrimToolsSettings: Decodable {
   }
 
   /// Whether the current process is running under the Swift test harness.
+  ///
+  /// Detection covers both Xcode (env var) and `swift test` on Linux (`.xctest` suffix).
+  /// `SKYRIM_TOOLS_FORCE_TEST_SANDBOX=1` can force sandbox mode in CI or manual runs.
   private static var isRunningUnderTests: Bool {
     getenv("XCTestConfigurationFilePath") != nil
+      || CommandLine.arguments[0].hasSuffix(".xctest")
       || environmentValue(named: "SKYRIM_TOOLS_FORCE_TEST_SANDBOX") == "1"
   }
 

@@ -78,6 +78,17 @@ struct BuildManifestCommand: LoggableCommand {
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
     let mod = try ModMetadata.load(from: modPath, cwd: cwd)
     let paths = try ModMetadata.derivePaths(settings: settings, configURL: configURL, mod: mod)
+    try execute(mod: mod, paths: paths, buildNumber: buildNumber, emitSummary: true)
+  }
+
+  /// Write the manifest, optionally printing a summary line.
+  mutating func execute(
+    mod: ModMetadata,
+    paths: ModMetadata.DerivedPaths,
+    buildNumber: Int,
+    emitSummary: Bool
+  ) throws {
+    let fm = FileManager.default
 
     guard fm.fileExists(atPath: paths.archiveURL.path) else {
       throw BuildManifestError.archiveNotFound(paths.archiveURL.path)
@@ -109,7 +120,9 @@ struct BuildManifestCommand: LoggableCommand {
     try data.write(to: paths.manifestURL)
 
     log("Wrote \(paths.manifestURL.path)")
-    print("Manifest created at: \(paths.manifestURL.path)")
+    if emitSummary {
+      print("Manifest created at: \(paths.manifestURL.path)")
+    }
   }
 
   /// Compute md5sum for a file by invoking the host md5sum utility.

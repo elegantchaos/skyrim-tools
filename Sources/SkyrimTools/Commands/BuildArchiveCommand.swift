@@ -56,8 +56,13 @@ struct BuildArchiveCommand: LoggableCommand {
     let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
     let mod = try ModMetadata.load(from: modPath, cwd: cwd)
-    let paths = try ModMetadata.derivePaths(
-      settings: settings, configURL: configURL, mod: mod)
+    let paths = try ModMetadata.derivePaths(settings: settings, configURL: configURL, mod: mod)
+    try execute(paths: paths, emitSummary: true)
+  }
+
+  /// Build the archive, optionally printing a summary line.
+  mutating func execute(paths: ModMetadata.DerivedPaths, emitSummary: Bool) throws {
+    let fm = FileManager.default
     let stagingURL = paths.stagingURL
     let outputArchiveURL = paths.archiveURL
 
@@ -98,6 +103,8 @@ struct BuildArchiveCommand: LoggableCommand {
       throw BuildArchiveError.sevenZipFailed(process.terminationStatus)
     }
 
-    print("Archive created at: \(outputArchiveURL.path)")
+    if emitSummary {
+      print("Archive created at: \(outputArchiveURL.path)")
+    }
   }
 }
