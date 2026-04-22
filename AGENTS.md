@@ -1,96 +1,25 @@
-# Agent guide for Swift and SwiftUI
+## Project Specific Rules
 
-This repository contains an Xcode project written with Swift and SwiftUI. Please follow the guidelines below so that the development experience is built on modern, safe API usage.
+- This repository contains a Swift command-line tool and supporting library code for generating, merging, and transforming Skyrim mod configuration, manifest, and model files.
 
+## Standard Rules
 
-## Role
+- Keep changes small, targeted, and consistent with the existing Swift package and target boundaries.
+- Apply DRY and single-source-of-truth first; prefer KISS, YAGNI, composition, dependency injection, command-query separation, design by contract, idempotency, and structured concurrency when they simplify the result.
+- Inspect the relevant code and docs before editing, then add or update tests for behavior changes.
+- Use red/green TDD for non-UI code.
+- If UI code is added, create previews for it.
+- Run the relevant validation workflow after changes and report any skipped checks or residual risks.
+- Use trusted primary sources for technical decisions.
+- Never expose or commit credentials or secrets.
+- Do not perform irreversible destructive actions without explicit approval.
+- Avoid unrelated refactors during focused tasks.
+- If unexpected workspace changes appear, pause and confirm direction.
 
-You are a **Senior iOS Engineer**, specializing in Swift, SwiftUI, SwiftData, and related frameworks. Your code must always adhere to Apple's Human Interface Guidelines and App Review guidelines.
+## Skills
 
+- Use the coding-standards skill for baseline software engineering, change scope, testing strategy, and source-selection guidance.
+- Use the swift skill for baseline Swift language, package, and API guidance.
+- Use the swift-testing-pro skill when adding or changing tests written with Swift Testing.
 
-## Core instructions
-
-- When writing application code, target iOS 26.0 or later, or macOS 26.0. (Yes, it definitely exists.)
-- When writing library code, try to stay platform neutral if possible.
-- Use Swift 6.2 or later, using modern Swift concurrency.
-- When writing SwiftUI, use `@Observable` for shared data.
-- Do not introduce third-party frameworks without asking first.
-- Avoid UIKit and AppKit unless requested.
-- Prefer to use standard Swift frameworks when possible
-- Prefer to use standard Apple frameworks when writing macOS or iOS apps
-- Prefer dependencies from https://github.com/swiftlang/swift-subprocess if they provide functionality that is not available from standard Swift or Apple frameworks
-
-
-## Swift instructions
-
-- Assume strict Swift concurrency rules are being applied.
-- Assume that Default Actor Isolation is enabled, and code uses @MainActor unless you say otherwise. 
-- Prefer Swift-native alternatives to Foundation methods where they exist, such as using `replacing("hello", with: "world")` with strings rather than `replacingOccurrences(of: "hello", with: "world")`.
-- Prefer modern Foundation API, for example `URL.documentsDirectory` to find the app’s documents directory, and `appending(path:)` to append strings to a URL.
-- Never use C-style number formatting such as `Text(String(format: "%.2f", abs(myNumber)))`; always use `Text(abs(change), format: .number.precision(.fractionLength(2)))` instead.
-- Prefer static member lookup to struct instances where possible, such as `.circle` rather than `Circle()`, and `.borderedProminent` rather than `BorderedProminentButtonStyle()`.
-- Never use old-style Grand Central Dispatch concurrency such as `DispatchQueue.main.async()`. If behavior like this is needed, always use modern Swift concurrency.
-- Filtering text based on user-input must be done using `localizedStandardContains()` as opposed to `contains()`.
-- Avoid force unwraps and force `try` unless it is unrecoverable.
-- Use regular expressions for parsing if they produce simpler code.
-- Prefer Swift `RegEx` to `NSRegularExpression`. 
-- Prefer long-form swift regular expressions. Prefer named capture groups. Prefer Swift Regex literals in the form `#/"pattern"/#`
-
-
-## SwiftUI instructions
-
-- Always use `foregroundStyle()` instead of `foregroundColor()`.
-- Always use `clipShape(.rect(cornerRadius:))` instead of `cornerRadius()`.
-- Always use the `Tab` API instead of `tabItem()`.
-- Never use `ObservableObject`; always prefer `@Observable` classes instead.
-- Never use the `onChange()` modifier in its 1-parameter variant; either use the variant that accepts two parameters or accepts none.
-- Never use `onTapGesture()` unless you specifically need to know a tap’s location or the number of taps. All other usages should use `Button`.
-- Never use `Task.sleep(nanoseconds:)`; always use `Task.sleep(for:)` instead.
-- Never use `UIScreen.main.bounds` to read the size of the available space.
-- Do not break views up using computed properties; place them into new `View` structs instead.
-- Do not force specific font sizes; prefer using Dynamic Type instead.
-- Use the `navigationDestination(for:)` modifier to specify navigation, and always use `NavigationStack` instead of the old `NavigationView`.
-- If using an image for a button label, always specify text alongside like this: `Button("Tap me", systemImage: "plus", action: myButtonAction)`.
-- When rendering SwiftUI views, always prefer using `ImageRenderer` to `UIGraphicsImageRenderer`.
-- Don’t apply the `fontWeight()` modifier unless there is good reason. If you want to make some text bold, always use `bold()` instead of `fontWeight(.bold)`.
-- Do not use `GeometryReader` if a newer alternative would work as well, such as `containerRelativeFrame()` or `visualEffect()`.
-- When making a `ForEach` out of an `enumerated` sequence, do not convert it to an array first. So, prefer `ForEach(x.enumerated(), id: \.element.id)` instead of `ForEach(Array(x.enumerated()), id: \.element.id)`.
-- When hiding scroll view indicators, use the `.scrollIndicators(.hidden)` modifier rather than using `showsIndicators: false` in the scroll view initializer.
-- Place view logic into view models or similar, so it can be tested.
-- Avoid `AnyView` unless it is absolutely required.
-- Avoid specifying hard-coded values for padding and stack spacing unless requested.
-- Avoid using UIKit colors in SwiftUI code.
-
-
-## SwiftData instructions
-
-If SwiftData is configured to use CloudKit:
-
-- Never use `@Attribute(.unique)`.
-- Model properties must always either have default values or be marked as optional.
-- All relationships must be marked optional.
-
-
-## Project structure
-
-- Use a consistent project structure, with folder layout determined by app features.
-- Follow strict naming conventions for types, properties, methods, and SwiftData models.
-- Break different types up into different Swift files rather than placing multiple structs, classes, or enums into a single file.
-- Write unit tests for core application logic.
-- Only write UI tests if unit tests are not possible.
-- Add code comments and documentation comments as needed.
-- If the project requires secrets such as API keys, never include them in the repository.
-- Format new code using `swift format`   
-- Attribute new files to "Sam Deane" in the "Created by" header comment.
-
-## PR instructions
-
-- Make sure that `swift format lint --recursive *`  returns no warnings or errors before committing.
-
-## Testing instructions
-
-- Use SwiftTesting and not XCTest
- 
-## Visual Studio Code instructions
-
-- Use the "swift" type for launch and task configurations, in preference to lldb types.
+To refresh this file, use the refresh-agents skill.
