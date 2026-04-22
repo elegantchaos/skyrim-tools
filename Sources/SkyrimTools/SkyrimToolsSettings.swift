@@ -10,17 +10,23 @@ struct SkyrimToolsSettings: Decodable {
 
   /// Paths used by command workflows.
   struct Paths: Decodable {
-    /// Path to the Vortex extension source folder.
-    let vortexExtension: String?
+    /// Vortex-related paths.
+    struct Vortex: Decodable {
+      /// Path to the staging folder (e.g., Scorpio Overrides).
+      let staging: String?
 
-    /// Path to the Vortex plugins root folder.
-    let vortexPlugins: String?
+      /// Path to the Vortex extension source folder.
+      let `extension`: String?
 
-    /// Coding keys for dotted JSON path names.
-    enum CodingKeys: String, CodingKey {
-      case vortexExtension = "vortex.extension"
-      case vortexPlugins = "vortex.plugins"
+      /// Path to the Vortex plugins root folder.
+      let plugins: String?
+
+      /// Path to the Vortex AutoInstall folder.
+      let autoinstall: String?
     }
+
+    /// Vortex path settings.
+    let vortex: Vortex?
   }
 
   /// The configured paths.

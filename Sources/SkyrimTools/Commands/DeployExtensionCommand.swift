@@ -48,12 +48,13 @@ struct DeployExtensionCommand: LoggableCommand {
     let fm = FileManager.default
     let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
+    let vortexPaths = settings.paths.vortex
 
-    guard let sourcePath = settings.paths.vortexExtension else {
+    guard let sourcePath = vortexPaths?.extension else {
       throw DeployExtensionError.missingPath("vortex.extension")
     }
 
-    guard let pluginsPath = settings.paths.vortexPlugins else {
+    guard let pluginsPath = vortexPaths?.plugins else {
       throw DeployExtensionError.missingPath("vortex.plugins")
     }
 

@@ -17,6 +17,7 @@ struct RootCommand: AsyncParsableCommand {
       abstract: "Assorted tools for merging configuration files.",
       subcommands: [
         AlsarCommand.self,
+        DeployCommand.self,
         DeployExtensionCommand.self,
         MergeCommand.self,
         ModsCommand.self,
