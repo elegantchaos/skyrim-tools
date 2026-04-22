@@ -10,14 +10,11 @@ struct SkyrimToolsSettings: Decodable {
 
   /// Paths used by command workflows.
   struct Paths: Decodable {
-    /// Path to the deployed root folder containing staging content and archives.
-    let deployed: String?
+    /// Path to the staging root folder containing mod repositories.
+    let staging: String?
 
     /// Vortex-related paths.
     struct Vortex: Decodable {
-      /// Path to the staging folder (e.g., Scorpio Overrides).
-      let staging: String?
-
       /// Path to the Vortex extension source folder.
       let `extension`: String?
 

@@ -7,6 +7,9 @@ import Foundation
 
 /// Metadata that describes a mod archive build/deploy unit.
 struct ModMetadata: Decodable {
+  /// Folder name for the deployed mod repository under the staging root.
+  let mod: String
+
   /// Folder name under the deployed root that should be archived.
   let content: String
 
@@ -56,13 +59,14 @@ struct ModMetadata: Decodable {
   static func derivePaths(settings: SkyrimToolsSettings, configURL: URL, mod: ModMetadata)
     throws -> DerivedPaths
   {
-    guard let deployedPath = settings.paths.deployed else {
-      throw MetadataError.missingPath("deployed")
+    guard let stagingRootPath = settings.paths.staging else {
+      throw MetadataError.missingPath("staging")
     }
 
-    let deployedURL = SkyrimToolsSettings.resolve(deployedPath, relativeTo: configURL)
-    let stagingURL = deployedURL.appending(path: mod.content)
-    let archiveURL = deployedURL.appending(path: mod.archive)
+    let stagingRootURL = SkyrimToolsSettings.resolve(stagingRootPath, relativeTo: configURL)
+    let modRootURL = stagingRootURL.appending(path: mod.mod)
+    let stagingURL = modRootURL.appending(path: mod.content)
+    let archiveURL = modRootURL.appending(path: mod.archive)
     let manifestURL = URL(fileURLWithPath: archiveURL.path + ".vortex.json")
 
     return DerivedPaths(stagingURL: stagingURL, archiveURL: archiveURL, manifestURL: manifestURL)
