@@ -14,16 +14,11 @@ struct BuildFomodCommand: LoggableCommand {
     /// Required field is missing from metadata.
     case missingMetadataField(String)
 
-    /// Version format in metadata is invalid.
-    case invalidMetadataVersion(String)
-
     /// User-facing error description.
     var description: String {
       switch self {
       case .missingMetadataField(let field):
         return "Missing required field in mod metadata: \(field)"
-      case .invalidMetadataVersion(let value):
-        return "Invalid mod metadata version '\(value)'. Expected at least major.minor"
       }
     }
   }
@@ -48,6 +43,11 @@ struct BuildFomodCommand: LoggableCommand {
 
   /// Run fomod build.
   mutating func run() async throws {
+    try execute(emitSummary: true)
+  }
+
+  /// Generate fomod files, optionally printing the summary line.
+  mutating func execute(emitSummary: Bool) throws {
     let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
     let mod = try ModMetadata.load(from: modPath, cwd: cwd)
@@ -67,7 +67,10 @@ struct BuildFomodCommand: LoggableCommand {
       throw BuildFomodError.missingMetadataField("version")
     }
 
-    let versionString = try composedVersion(baseVersion: baseVersion, buildNumber: buildNumber)
+    let versionString = try ModMetadata.composeVersion(
+      baseVersion: baseVersion,
+      buildNumber: buildNumber
+    )
 
     let fomodURL = paths.stagingURL.appending(path: "fomod")
     let infoURL = fomodURL.appending(path: "info.xml")
@@ -101,7 +104,9 @@ struct BuildFomodCommand: LoggableCommand {
     log("Writing \(moduleConfigURL.path)")
     try moduleConfigXML.write(to: moduleConfigURL)
 
-    print("Generated fomod files in: \(fomodURL.path)")
+    if emitSummary {
+      print("Generated fomod files in: \(fomodURL.path)")
+    }
   }
 
   /// Escape XML entities for element and attribute values.
@@ -119,17 +124,5 @@ struct BuildFomodCommand: LoggableCommand {
     let lower = string.lowercased()
     let replaced = lower.replacing(#/[^a-z0-9]+/#, with: "-")
     return replaced.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-  }
-
-  /// Compose full version from metadata major/minor and supplied build number.
-  private func composedVersion(baseVersion: String, buildNumber: Int) throws -> String {
-    let components = baseVersion.split(separator: ".")
-    guard components.count >= 2 else {
-      throw BuildFomodError.invalidMetadataVersion(baseVersion)
-    }
-
-    let major = String(components[0])
-    let minor = String(components[1])
-    return "\(major).\(minor).\(buildNumber)"
   }
 }

@@ -58,8 +58,14 @@ struct DeployExtensionCommand: LoggableCommand {
       throw DeployExtensionError.missingPath("vortex.plugins")
     }
 
-    let sourceURL = SkyrimToolsSettings.resolve(sourcePath, relativeTo: configURL)
-    let pluginsURL = SkyrimToolsSettings.resolve(pluginsPath, relativeTo: configURL)
+    let sourceURL = try SkyrimToolsSettings.resolveConfiguredPath(
+      sourcePath,
+      relativeTo: configURL
+    )
+    let pluginsURL = try SkyrimToolsSettings.resolveConfiguredPath(
+      pluginsPath,
+      relativeTo: configURL
+    )
 
     var isDirectory: ObjCBool = false
     guard fm.fileExists(atPath: sourceURL.path, isDirectory: &isDirectory) else {

@@ -51,11 +51,16 @@ struct ModMetadata: Decodable {
     /// Required key is missing from config.
     case missingPath(String)
 
+    /// Metadata version format is invalid.
+    case invalidVersion(String)
+
     /// User-facing error description.
     var description: String {
       switch self {
       case .missingPath(let key):
         return "Missing required path in skyrim-tools.json: paths.\(key)"
+      case .invalidVersion(let value):
+        return "Invalid mod metadata version '\(value)'. Expected at least major.minor"
       }
     }
   }
@@ -81,12 +86,27 @@ struct ModMetadata: Decodable {
       throw MetadataError.missingPath("staging")
     }
 
-    let stagingRootURL = SkyrimToolsSettings.resolve(stagingRootPath, relativeTo: configURL)
+    let stagingRootURL = try SkyrimToolsSettings.resolveConfiguredPath(
+      stagingRootPath,
+      relativeTo: configURL
+    )
     let modRootURL = stagingRootURL.appending(path: mod.mod)
     let stagingURL = modRootURL.appending(path: mod.content)
     let archiveURL = modRootURL.appending(path: mod.archive)
     let manifestURL = URL(fileURLWithPath: archiveURL.path + ".vortex.json")
 
     return DerivedPaths(stagingURL: stagingURL, archiveURL: archiveURL, manifestURL: manifestURL)
+  }
+
+  /// Compose a release version from metadata major/minor and a build number.
+  static func composeVersion(baseVersion: String, buildNumber: Int) throws -> String {
+    let components = baseVersion.split(separator: ".")
+    guard components.count >= 2 else {
+      throw MetadataError.invalidVersion(baseVersion)
+    }
+
+    let major = String(components[0])
+    let minor = String(components[1])
+    return "\(major).\(minor).\(buildNumber)"
   }
 }

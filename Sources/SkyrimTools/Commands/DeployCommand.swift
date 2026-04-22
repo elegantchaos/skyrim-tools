@@ -67,7 +67,10 @@ struct DeployCommand: LoggableCommand {
       throw DeployError.missingPath("vortex.autoinstall")
     }
 
-    let autoinstallURL = SkyrimToolsSettings.resolve(autoinstallPath, relativeTo: configURL)
+    let autoinstallURL = try SkyrimToolsSettings.resolveConfiguredPath(
+      autoinstallPath,
+      relativeTo: configURL
+    )
 
     guard fm.fileExists(atPath: archiveURL.path) else {
       throw DeployError.archiveNotFound(archiveURL.path)
