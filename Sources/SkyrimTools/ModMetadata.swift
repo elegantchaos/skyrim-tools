@@ -16,6 +16,24 @@ struct ModMetadata: Decodable {
   /// Archive filename to produce and deploy.
   let archive: String
 
+  /// Stable plugin identifier used for private archive updates.
+  let id: String?
+
+  /// Display version string for installer metadata.
+  let version: String?
+
+  /// Display name for installer metadata.
+  let name: String?
+
+  /// Description shown in installer metadata.
+  let description: String?
+
+  /// Author shown in installer metadata.
+  let author: String?
+
+  /// Project or support website for installer metadata.
+  let website: String?
+
   /// Fully resolved paths derived from mod metadata and settings.
   struct DerivedPaths {
     /// Staging folder path.
