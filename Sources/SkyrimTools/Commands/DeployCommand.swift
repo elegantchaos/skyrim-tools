@@ -8,8 +8,8 @@ import Foundation
 
 /// Deploys a built archive and sidecar manifest to Vortex AutoInstall.
 ///
-/// Reads staging and autoinstall paths from settings, derives archive and manifest paths,
-/// copies both to AutoInstall, and touches a `.rescan` marker to trigger Vortex rescanning.
+/// Reads mod metadata + settings to derive archive and manifest paths,
+/// then copies both to AutoInstall and touches a `.rescan` marker.
 struct DeployCommand: LoggableCommand {
 
   /// Domain errors for archive deployment.
@@ -46,45 +46,28 @@ struct DeployCommand: LoggableCommand {
   /// Enable verbose logs.
   @Flag() var verbose: Bool = false
 
-  /// Optional override for archive path.
-  @Option(help: "Override path to the archive file (defaults to staging path with .7z extension).")
-  var archivePath: String?
-
-  /// Optional override for manifest path.
-  @Option(help: "Override path to the manifest file (defaults to archive path with .vortex.json extension).")
-  var manifestPath: String?
+  /// Path to mod JSON that defines content and archive names.
+  @Option(help: "Path to mod JSON (e.g. overrides.json).")
+  var modPath: String
 
   /// Run the deployment.
   mutating func run() async throws {
     let fm = FileManager.default
     let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
     let (settings, configURL) = try SkyrimToolsSettings.load(from: cwd)
+    let mod = try ModMetadata.load(from: modPath, cwd: cwd)
+    let paths = try ModMetadata.derivePaths(
+      settings: settings, configURL: configURL, mod: mod)
+
+    let archiveURL = paths.archiveURL
+    let manifestURL = paths.manifestURL
+
     let vortexPaths = settings.paths.vortex
-
-    guard let stagingPath = vortexPaths?.staging else {
-      throw DeployError.missingPath("vortex.staging")
-    }
-
     guard let autoinstallPath = vortexPaths?.autoinstall else {
       throw DeployError.missingPath("vortex.autoinstall")
     }
 
-    let stagingURL = SkyrimToolsSettings.resolve(stagingPath, relativeTo: configURL)
     let autoinstallURL = SkyrimToolsSettings.resolve(autoinstallPath, relativeTo: configURL)
-
-    let archiveURL: URL
-    if let override = archivePath {
-      archiveURL = SkyrimToolsSettings.resolve(override, relativeTo: configURL)
-    } else {
-      archiveURL = URL(fileURLWithPath: stagingURL.path + ".7z")
-    }
-
-    let manifestURL: URL
-    if let override = manifestPath {
-      manifestURL = SkyrimToolsSettings.resolve(override, relativeTo: configURL)
-    } else {
-      manifestURL = URL(fileURLWithPath: archiveURL.path + ".vortex.json")
-    }
 
     guard fm.fileExists(atPath: archiveURL.path) else {
       throw DeployError.archiveNotFound(archiveURL.path)
