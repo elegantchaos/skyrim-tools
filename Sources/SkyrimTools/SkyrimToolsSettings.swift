@@ -28,6 +28,9 @@ struct SkyrimToolsSettings: Decodable {
     /// Path to the staging root folder containing mod repositories.
     let staging: String?
 
+    /// Path to the Skyrim game folder.
+    let game: String?
+
     /// Vortex-related paths.
     struct Vortex: Decodable {
       /// Path to the Vortex extension source folder.

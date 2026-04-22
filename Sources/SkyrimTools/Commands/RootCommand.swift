@@ -19,6 +19,7 @@ struct RootCommand: AsyncParsableCommand {
         AlsarCommand.self,
         BuildArchiveCommand.self,
         CheckStagingCommand.self,
+        CompileCommand.self,
         BuildFomodCommand.self,
         BuildManifestCommand.self,
         DeployCommand.self,
