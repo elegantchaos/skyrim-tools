@@ -3,6 +3,8 @@
 //  All code (c) 2025 - present day, Elegant Chaos Limited.
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+// TODO: fix bug with duplicate entries in ARMA.ini, caused by multiple armors referencing the same ARMA record with different modes.
+
 import ArgumentParser
 import Foundation
 
@@ -113,59 +115,65 @@ struct AlsarCommand: LoggableCommand {
   func filteredARMAChunk(
     armors: [(String, ArmorRecord)], filter: Keyword, filterName: String, model: ModelManager
   ) throws -> String {
-    var done = Set<String>()
+    var done = [String: String]()
 
     var lines: [(String, String)] = []
     for (_, armor) in armors {
       guard let alsarInfo = armor.alsar else { continue }
       let arma = alsarInfo.arma
-      let mode = alsarInfo.mode
       guard let alsar = model.alsar(arma) else { continue }
-      let variant = "\(mode)\(arma)"
-      if !done.contains(variant) {
-        done.insert(variant)
-        if let keywords = armor.keywords, keywords.contains(filter) {
-          let category = ARMACategory.fromKeyword(filter)
-          var entries: [(String, FormReference)] = []
-          if let loose = alsar.loose {
-            entries.append(("L", loose))
-          }
-          if let fitted = alsar.fitted {
-            entries.append(("W", fitted))
-          }
+      if let keywords = armor.keywords, keywords.contains(filter) {
+        let category = ARMACategory.fromKeyword(filter)
+        var entries: [(String, FormReference)] = []
+        if let loose = alsar.loose {
+          entries.append(("L", loose))
+        }
+        if let fitted = alsar.fitted {
+          entries.append(("W", fitted))
+        }
 
-          for (code, entry) in entries {
-            let name = alsar.alias ?? arma
-            let predictedName = "zzLSAR\(code)\(category.iniChar)\(name)"
-            if let id = entry.rawFormID8, let editorID = entry.editorID {
-              if entry.mod != "zzAlsarOutfitMod.esp" {
+        for (code, entry) in entries {
+          let name = alsar.alias ?? arma
+          let predictedName = "zzLSAR\(code)\(category.iniChar)\(name)"
+          if let id = entry.rawFormID8, let editorID = entry.editorID {
+            if entry.mod != "zzAlsarOutfitMod.esp" {
+              print(
+                "Warning: ARMA entry \(name) is in \(entry.mod ?? "unknown mod"): expected zzAlsarOutfitMod.esp"
+              )
+            }
+            if editorID != predictedName {
+              print(
+                "Warning: ARMA entry \(name) has editorID \(editorID) but expected \(predictedName)"
+              )
+            }
+
+            let options = alsar.options
+            var line = "\(name)\t"
+            line += "\(id)\t"
+            line += "\(category.iniChar)\t"
+            line += "\(code)\t"
+            var opt = "\(options.skirt ? 1 : 0)\t"
+            opt += "\(options.panty ? 1 : 0)\t"
+            opt += "\(options.bra ? 1 : 0)\t"
+            opt += "\(options.greaves ? 1 : 0)\t"
+            line += opt
+            line += "\(alsar.priority ?? 0)\t"
+            line += "\(armor.id.alsarDLCCode)\t"
+            line += "\(editorID)\n"
+            let sortKey = "\(code)-\(name)"
+            if let existing = done[sortKey] {
+              if opt != existing {
                 print(
-                  "Warning: ARMA entry \(name) is in mod \(entry.mod) but expected zzAlsarOutfitMod.esp"
+                  "Warning: duplicate ARMA entry for \(name) with different options:\n- \(existing)- \(opt)"
                 )
               }
-              if editorID != predictedName {
-                print(
-                  "Warning: ARMA entry \(name) has editorID \(editorID) but expected \(predictedName)"
-                )
-              }
-
-              let options = alsar.options
-              var line = "\(name)\t"
-              line += "\(id)\t"
-              line += "\(category.iniChar)\t"
-              line += "\(code)\t"
-              line += "\(options.skirt ? 1 : 0)\t"
-              line += "\(options.panty ? 1 : 0)\t"
-              line += "\(options.bra ? 1 : 0)\t"
-              line += "\(options.greaves ? 1 : 0)\t"
-              line += "\(alsar.priority ?? 0)\t"
-              line += "\(armor.id.alsarDLCCode)\t"
-              line += "\(editorID)\n"
-              let sortKey = "\(code)-\(name)"
+            } else {
+              done[sortKey] = opt
               lines.append((sortKey, line))
             }
           }
         }
+        // }
       }
     }
 
